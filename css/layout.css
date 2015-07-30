@@ -1,0 +1,612 @@
+body {
+    background: #F9F9F9;
+}
+blockquote, q {
+    quotes: none;
+}
+blockquote:before, blockquote:after, q:before, q:after {
+    content:'';
+    content: none;
+}
+.pull-left {
+    float: left;
+}
+.pull-right {
+    float: right;
+}
+.clearboth {
+    clear: both;
+}
+.hidden {
+    display: none;
+}
+/* Common CSS Styles section ends */
+.refresh-ico {
+	  float: right;
+  margin: 0px 5px 3px 0px;
+}
+.clear{
+clear:both;
+}
+#wrapper {
+    width: 1100px;
+    margin: 0 auto;
+    font-family: "LucidaGrande", Helvetica, Arial, Verdana;
+    font-size: 13px;
+    position: relative;
+    z-index: 1;
+}
+/* FreshForks logo section begins */
+
+.logo-container {
+    width: 185px;
+}
+#fflogo {
+    background: url('../img/logo.gif');
+    height: 60px;
+    background-repeat: no-repeat;
+    margin-left: 0px;
+    margin-bottom: -6px;
+    width: 100%;
+}
+@media only screen and (-webkit-min-device-pixel-ratio: 2), only screen and (min-device-pixel-ratio: 2) {
+    #fflogo {
+        background-image: url("../img/logo.png");
+        background-size: 109px 60px;
+    }
+}
+/* FreshForks logo section ends */
+
+#container {
+    padding: 10px;
+}
+/* Dashboard section begins */
+
+#dashboard-content {
+    width: 100%;
+}
+/* Sidebar section begins */
+
+#sidebar {
+    width: 189px;
+/*    height: 196px;*/
+    background: #ffffff;
+    padding: 16px 0 16px 0;
+    border: 1px solid #D4D4D4;
+    border-right: none;
+    margin-top: 10px;
+    position: absolute;
+    z-index: 0;
+}
+#profile-pic {
+    margin: 0 9px 15px 10px;
+}
+#profile-name {
+    font-size: 12px;
+    color: #333333;
+    line-height: 15px;
+    margin-top: 10px;
+}
+#main-menu {
+    width: 169px;
+    height: 12px;
+    padding: 10px;
+    background: #F6F6F6;
+    border-top: 1px solid #D4D4D4;
+    border-bottom: 1px solid #D4D4D4;
+}
+#main-menu h4 {
+    font-size: 13px;
+    color: #000000;
+    line-height: 16px;
+    margin-left: 9px;
+}
+#main-menu-icon {
+    width: 14px;
+    height: 14px;
+    background-position: 0 -26px;
+}
+.icon {
+    background: url('../img/icons.png') no-repeat 0 0;
+}
+@media only screen and (-webkit-min-device-pixel-ratio: 2), only screen and (min-device-pixel-ratio: 2) {
+    .icon {
+        background: url('../img/icons.png') no-repeat 0 0;
+    }
+}
+#sub-menu {
+    width: 180px;
+    padding: 6px 0 0 10px;
+    list-style: none;
+}
+#sub-menu li {
+    margin: 10px 0;
+}
+#sub-menu li a {
+    font-size: 13px;
+    color: #666666;
+    line-height: 16px;
+    text-decoration: none;
+    display: block;
+}
+#sub-menu li a.active {
+    font-family: "LucidaGrande-Bold", Helvetica, Arial, Verdana;
+    color: #333333;
+}
+
+/* Footer section begins */
+
+.footer {
+    padding: 14px 0px 23px 0;
+    font-family: Verdana, sans-serif;
+    font-size: 10px;
+    color: #666;
+    line-height: 15px;
+    width: 100%;
+    margin-left: 190px;
+    clear: both;
+}
+.footer a {
+    text-decoration: none;
+    color: #333;
+    border-bottom: 1px solid #333;
+}
+/* Footer section ends */
+/* Sidebar section ends */
+
+.chart-content {
+	width:1070px;
+/*    width: 988px;*/
+    background: #ffffff;
+    padding: 10px 0 10px 0;
+    border: 1px solid #D4D4D4;
+}
+.chart-category {
+    /*width: 473px;*/
+    width: 511px;
+    border-right: 1px dotted #4A4A4A;
+    padding: 8px 10px 20px 10px;
+    /*height: 350px;*/
+    margin-bottom: 32px;
+}
+.chart-category.no-border {
+    border-right: none;
+}
+.chart-category.full-width {
+    width: 1050px;
+    clear: both;
+    border-right: none;
+}
+.select-style {
+    padding: 0;
+    margin: -5px 0 0 20px;
+    border: 1px solid #CCCCCC;
+    width: 92px;
+    height: 26px;
+    border-radius: 2px;
+    overflow: hidden;
+    background-image: -o-linear-gradient(-89deg, #FFFFFF 0%, #DEDEDE 100%);
+    background-image: -moz-linear-gradient(-89deg, #FFFFFF 0%, #DEDEDE 100%);
+    background-image: -ms-linear-gradient(-89deg, #FFFFFF 0%, #DEDEDE 100%);
+    background-image: linear-gradient(-179deg, #FFFFFF 0%, #DEDEDE 100%);
+}
+select {
+    width: 110px;
+    height: 26px;
+    background-color: transparent;
+    color: #666666;
+    text-align: left;
+    text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.25);
+    border: 0;
+    border-radius: 0;
+    outline: 0;
+    padding-left: 10px;
+    -webkit-border-radius: 0;
+    -moz-border-radius: 0;
+    border-radius: 0;
+    display: inline-block;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+}
+.select-arrow {
+    width: 5px;
+    height: 5px;
+    background: transparent;
+    border: 1px solid #666666;
+    border-top: none;
+    border-right: none;
+    margin-top: -16px;
+    margin-left: 75px;
+    -moz-transform: rotate(-45deg);
+    -o-transform: rotate(-45deg);
+    -webkit-transform: rotate(-45deg);
+    -ms-transform: rotate(-45deg);
+    -ms-transform-origin: 0 0;
+    transform: rotate(-45deg);
+    z-index: 2;
+    position: absolute;
+}
+.top-level-select-filter {
+    margin-top: 15px;
+    float: right;
+}
+.top-level-select-filter .select-style {
+    margin-left: 5px;
+}
+
+.peryear{
+	float:left;
+}
+
+.chart-category-heading {
+    font-family: "LucidaGrande-Bold", Helvetica, Arial, Verdana;
+    font-size: 15px;
+    color: #000000;
+    line-height: 18px;
+    margin-bottom: 10px;
+    font-weight:bold;
+}
+.chart-group-heading {
+    font-family: "LucidaGrande-Bold", Helvetica, Arial, Verdana;
+    font-size: 18px;
+    color: #000000;
+    line-height: 18px;
+    color: #CB1212;
+    padding:10px;
+}
+
+
+.divider {
+    width: 100%;
+    height: 1px;
+    border-top: 1px solid #979797;
+}
+.chart-category .single-half {
+    width: 235px;
+}
+.drill-caption {
+    float: right;
+    background: #FFFFFF;
+    color: #666;
+    font-style: italic;
+    font-family: serif;
+    padding-top: 5px;
+}
+.drill-caption-wrapper {
+    overflow: hidden;
+    background: #FFFFFF;
+}
+.geography-chart {
+    width: 308px;
+    height: auto;
+    margin-bottom: 0;
+    padding-bottom: 8px;
+}
+#europe-table-cont {
+    height: 147px;
+    overflow-y: scroll;
+}
+.mapTable tr {
+    background-color: #f5f5f5;
+}
+.mapTable tr td {
+    vertical-align: middle;
+}
+.mapTable tr:nth-child(even) {
+    background-color: #FFFFFF;
+}
+.mapCountryValue {
+    width: 60px;
+    float: right;
+    text-align: right;
+    padding: 10px 10px;
+    border-radius: 3px;
+    color: #fff;
+}
+#geography-title-holder {
+    position: absolute;
+    margin-top: 10%;
+    border: none;
+    background: #f5f5f5;
+    z-index: 2;
+    padding: 0 20px;
+    width: 1072px;
+    left: 50%;
+    margin-left: -484px;
+    height: 50px;
+}
+#geography-title-holder h3 {
+    width: 494px;
+    float: left;
+    padding: 15px 20px;
+    font-size: 20px;
+    font-family: sans-serif;
+}
+/* Geography table section begins */
+
+table {
+    width: 100%;
+    overflow: scroll;
+}
+table thead {
+    background: #f5f5f5;
+}
+table thead tr th {
+    padding: 10px;
+    text-align: left;
+    font-weight: bold;
+}
+table tbody tr td {
+    padding: 10px;
+}
+/* Sprite style for countries in geography tab begins */
+
+.iMap {
+    background-image: url('../img/flags.gif');
+    background-repeat: no-repeat;
+}
+.USA {
+    background-position: -726px -176px;
+    width: 42px;
+    height: 29px;
+}
+.Mexico {
+    background-position: -438px -142px;
+    width: 42px;
+    height: 29px;
+}
+.Canada {
+    background-position: -102px -176px;
+    width: 42px;
+    height: 29px;
+}
+.Brazil {
+    background-position: -54px -347px;
+    width: 42px;
+    height: 29px;
+}
+.Venezuela {
+    background-position: -726px -347px;
+    width: 42px;
+    height: 29px;
+}
+.Argentina {
+    background-position: -6px -176px;
+    width: 42px;
+    height: 29px;
+}
+.Germany {
+    background-position: -246px -108px;
+    width: 42px;
+    height: 29px;
+}
+.France {
+    background-position: -198px -381px;
+    width: 42px;
+    height: 29px;
+}
+.UK {
+    background-position: -726px -142px;
+    width: 42px;
+    height: 29px;
+}
+.Italy {
+    background-position: -294px -313px;
+    width: 42px;
+    height: 29px;
+}
+.Austria {
+    background-position: -6px -279px;
+    width: 42px;
+    height: 29px;
+}
+.Denmark {
+    background-position: -150px -313px;
+    width: 42px;
+    height: 29px;
+}
+.Portugal {
+    background-position: -534px -245px;
+    width: 42px;
+    height: 29px;
+}
+.Spain {
+    background-position: -630px -211px;
+    width: 42px;
+    height: 29px;
+}
+.Finland {
+    background-position: -198px -347px;
+    width: 42px;
+    height: 29px;
+}
+.Sweden {
+    background-position: -630px -381px;
+    width: 42px;
+    height: 29px;
+}
+.Ireland {
+    background-position: -294px -245px;
+    width: 42px;
+    height: 29px;
+}
+.Norway {
+    background-position: -486px -313px;
+    width: 42px;
+    height: 29px;
+}
+.Belgium {
+    background-position: -54px -108px;
+    width: 42px;
+    height: 29px;
+}
+.Switzerland {
+    background-position: -678px -6px;
+    width: 42px;
+    height: 29px;
+}
+.Poland {
+    background-position: -534px -211px;
+    width: 42px;
+    height: 29px;
+}
+/* Sprite style for countries in geography tab ends */
+
+/* Geography table section ends */
+
+/* Dashboard section ends */
+
+/* Modal section begins */
+
+.modal {
+    position: absolute;
+    margin-top: 10%;
+    border: 2px solid #fff;
+    background: #fff;
+    z-index: 1;
+    padding: 20px;
+    width: 1068px;
+    left: 50%;
+    margin-left: -484px;
+}
+#modal-inner, #modal-inner-2 {
+    margin-top: 35px !important;
+}
+#modalWrapper {
+    z-index: 0;
+    display: none;
+    position: fixed;
+    height: 100%;
+    width: 100%;
+    background: rgba(0, 0, 0, 0.7);
+}
+#modalWrapper > h3 {
+    position: absolute;
+    margin-top: 10%;
+    left: 50%;
+    margin-left: -484px;
+    z-index: 2;
+    padding: 15px 20px;
+    font-size: 20px;
+    font-family: sans-serif;
+    background: #f5f5f5;
+    width: 1072px;
+}
+#modal-holder-1, #modal-holder-2 {
+    width: 512px;
+    height: 490px;
+}
+#modal-holder-1 h3, #modal-holder-2 h3 {
+    font-size: 20px;
+    font-family: sans-serif;
+}
+.close-modal {
+    position: absolute;
+    z-index: 3;
+    margin-top: 10.8%;
+    padding: 0;
+    left: 50%;
+    margin-left: 580px;
+    width: 20px;
+    height: 20px;
+    background-position: 0 0;
+}
+.close-modal:hover {
+    background-position: -26px 0;
+}
+/* Modal section ends */
+
+/* Custom tool tip style begins */
+div.tooltip-border {
+    padding-top: 5px;
+    border-bottom: 1px solid #888888;
+}
+div.tooltip-content {
+    padding-top: 5px;
+}
+/* Custom tool tip style ends */
+
+
+
+
+
+
+
+/* IE specific styles begins */
+
+.ie8 select {
+    margin-top: -3px;
+}
+.ie7 select, .ie6 select {
+    width: 110px;
+}
+.ie8 .select-arrow {
+    -ms-filter: "progid:DXImageTransform.Microsoft.Matrix(M11=0.70710678, M12=0.70710678, M21=-0.70710678, M22=0.70710678,sizingMethod='auto expand')";
+    filter: progid: DXImageTransform.Microsoft.Matrix(M11=0.70710678, M12=0.70710678, M21=-0.70710678, M22=0.70710678, sizingMethod='auto expand');
+    margin-top: -14px;
+}
+.ie7 .select-arrow, .ie6 .select-arrow {
+    display: none;
+}
+.ie8 .select-style {
+    filter: progid: DXImageTransform.Microsoft.gradient(startColorstr='#ffffff', endColorstr='#dedede', GradientType=0);
+}
+.ie7 .select-style, .ie6 .select-style {
+    border: none;
+    width: 110px;
+}
+.ie6 .select-style {
+    margin-top: 0;
+}
+.ie7 .top-level-select-filter, .ie6 .top-level-select-filter {
+    width: 205px;
+}
+.ie7 .top-level-select-filter span, .ie6 .top-level-select-filter span {
+    float: left;
+}
+.ie6 .top-level-select-filter span {
+    margin-top: 3px;
+}
+.ie8 .even-row, .ie7 .even-row, .ie6 .even-row {
+    background: #ffffff;
+}
+.ie8 #modalWrapper, .ie7 #modalWrapper, .ie6 #modalWrapper {
+    background: url('../img/overlay.png') repeat;
+}
+.ie7 #modalWrapper, .ie6 #modalWrapper {
+    left: 0px;
+}
+.ie6 #modalWrapper {
+    position: absolute;
+}
+.ie6 body, .ie6 html {
+    width: 100%;
+    height: 100%;
+}
+.ie6 #modal-title, .ie6 #close-modal {
+    top: 10px;
+}
+.ie6 #modal-title {
+    position: absolute;
+    z-index: 3;
+    margin-top: 10.8%;
+    padding: 0;
+    left: 50%;
+    margin-left: -464px;
+    width: 400px;
+    height: 20px;
+    background-position: 0 0;
+}
+.ie6 #sidebar {
+    position: absolute;
+    border-right: 1px solid #D4D4D4;
+    padding-bottom: 0;
+}
+.ie6 .chart-content {
+    margin-right: -1px;
+}
+.ie6 #sub-menu {
+    padding-top: 20px;
+}
+/* IE specific styles ends */

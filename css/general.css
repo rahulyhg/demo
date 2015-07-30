@@ -127,7 +127,7 @@ input:focus,select:focus,textarea:focus{background-color:#ffd}
 	text-decoration: underline;
 }
 .icon-16-cpanel {
-  background-image: url(../images/menu/icon-16-cpanel.png);
+ /* background-image: url(../images/menu/icon-16-cpanel.png);*/
 }
 
 /* -- overall styles ------------------------------ */

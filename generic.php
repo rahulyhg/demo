@@ -8,6 +8,7 @@ else generic();
 function generic(){
 //	print_a($_REQUEST);
     $DEFAULT_SORT_TYPE = 'desc';
+    $BUCKET_SIZE = 6;
 	$mm = date('m');; $yy = date('Y');
 
 	$fy = ""; $last_fy = "";
@@ -147,11 +148,19 @@ function generic(){
 		)
 	);
 
+	$c =0; $yy = date('Y'); $mm =date('n');
+	$filters ['expired'] = array('title' => '','hover' => 'Expired or Active','options' => array(
+		$c++ => array('value' => "-Both-", 'query' => " "),
+		$c++ => array('value' => "Expired", 'query' => " AND d.hpexpdt < '$yy-$mm-01' "),
+		$c++ => array('value' => "Active", 'query' => " AND d.hpexpdt >= '$yy-$mm-01' "),
+		)
+	);
 /********************************Filters****************************************/
+
 /********************************Query****************************************/
 	$query = array(); $qi=0;
-	$c = 0;
 
+	$c = 0;
 	$query[$qi++] = array(
 		'title'=> 'Pay Instrument Report',
 		'default_sort' => 'd.dealid',
@@ -207,6 +216,74 @@ function generic(){
 			$c++ => array('align'=>-1, 'sort'=>1, 'ops'=> NULL, 'link'=> 0, 'stotal' => 0, 'name' => 'PDC Dep',),
 		),
 	);
+
+
+	$c = 0;
+	$q = "SELECT tcase(t1.centre) as centre, COUNT(dealid) AS due,";
+	for($b = 1; $b <=$BUCKET_SIZE; $b++){
+		$q .=" SUM(a$b) AS a$b, SUM(r$b) AS r$b, SUM(b$b) AS b$b, ";
+	}
+	$q .= "
+	SUM(assigned_fd) AS assigned_fd, SUM(recovered_fd) AS recovered_fd, SUM(assigned_dm) AS assigned_dm, SUM(recovered_dm) AS recovered_dm, SUM(recovered) AS recovered
+	FROM (
+		SELECT d.inserttimestamp, d.dealid, d.OdDueAmt, d.dd, t.dealid AS rdid, t.rcptamt, d.OdDueAmt - t.rcptamt AS balance,
+		CASE WHEN d.dd = 1 THEN 1 ELSE 0 END AS assigned_fd, CASE WHEN d.dd = 1 AND t.dealid IS NOT NULL THEN 1 ELSE 0 END AS recovered_fd,
+		CASE WHEN d.dd != 1 THEN 1 ELSE 0 END AS assigned_dm, CASE WHEN d.dd != 1 AND t.dealid IS NOT NULL THEN 1 ELSE 0 END AS recovered_dm, ";
+
+		//Bucket 1 to previous last bucket
+		for($b = 1; $b < $BUCKET_SIZE; $b++){
+			$q .= " CASE WHEN d.rgid = $b THEN 1 ELSE 0 END AS a$b ,"; // Assigned
+			$q .= " CASE WHEN t.dealid IS Not NULL AND d.rgid = $b THEN 1 ELSE 0 END AS r$b ,"; // Recovered
+			$q .= " CASE WHEN t.dealid IS NULL AND d.rgid = $b THEN 1 ELSE 0 END AS b$b ,"; // Balance
+		}
+		//Last bucket
+		$q .= " CASE WHEN d.rgid >= $b THEN 1 ELSE 0 END AS a$b ,"; // Assigned
+		$q .= " CASE WHEN t.dealid IS Not NULL AND d.rgid >= $b THEN 1 ELSE 0 END AS r$b ,"; // Recovered
+		$q .= "	CASE WHEN t.dealid IS NULL AND d.rgid >= $b THEN 1 ELSE 0 END AS b$b, "; // Balance
+		$q .= " CASE WHEN t.dealid IS NOT NULL THEN 1 ELSE 0 END AS recovered, ";
+
+		$q .= " d.sraid, tcase(d.centre) as centre
+		FROM ".$dbPrefix_curr.".tbxfieldrcvry d
+		LEFT JOIN (
+			SELECT Month(r.rcptdt) as mm, r.dealid, SUM(rd.rcptamt) AS rcptamt FROM ".$dbPrefix_curr.".tbxdealrcpt r JOIN ".$dbPrefix_curr.".tbxdealrcptdtl rd ON r.rcptid = rd.rcptid
+				WHERE r.cclflg = 0 AND r.CBflg = 0 AND (rd.dctyp = 101 OR rd.dctyp = 111) and r.rcptpaymode = 1
+				GROUP BY r.dealid, month(r.rcptdt)
+		) AS t ON d.dealid = t.dealid and d.mm = t.mm
+	) t1 GROUP BY t1.centre having 1 ";
+
+	$query[$qi++] = array(
+		'title'=> 'Recovery History',
+		'default_sort' => 't1.mm',
+		'default_sort_type' => 'ASC',
+		'filters' => array('hpdt', 'centre'),
+		'q' => $q,
+		'columns' => array(
+			$c++ => array('align'=>1, 'sort'=>1, 'ops'=> NULL, 'link'=> 1, 'stotal' => 0, 'name' => 'Deal No',),
+			$c++ => array('align'=>-1, 'sort'=>1, 'ops'=> NULL, 'link'=> 1, 'stotal' => 0, 'name' => 'Customer Name',),
+			$c++ => array('align'=>1, 'sort'=>1, 'ops'=> NULL, 'link'=> 0, 'stotal' => 0, 'name' => 'Start Date',),
+			$c++ => array('align'=>-1, 'sort'=>1, 'ops'=> NULL, 'link'=> 0, 'stotal' => 0, 'name' => 'Centre',),
+			$c++ => array('align'=>1, 'sort'=>1, 'ops'=> NULL, 'link'=> 0, 'stotal' => 0, 'name' => 'Bucket',),
+			$c++ => array('align'=>-1, 'sort'=>1, 'ops'=> NULL, 'link'=> 0, 'stotal' => 0, 'name' => 'NACH',),
+			$c++ => array('align'=>-1, 'sort'=>1, 'ops'=> NULL, 'link'=> 0, 'stotal' => 0, 'name' => 'NACH Remarks',),
+			$c++ => array('align'=>-1, 'sort'=>1, 'ops'=> NULL, 'link'=> 0, 'stotal' => 0, 'name' => 'NAC Dep',),
+			$c++ => array('align'=>-1, 'sort'=>1, 'ops'=> NULL, 'link'=> 0, 'stotal' => 0, 'name' => 'ECS',),
+			$c++ => array('align'=>-1, 'sort'=>1, 'ops'=> NULL, 'link'=> 0, 'stotal' => 0, 'name' => 'ECS Remarks',),
+			$c++ => array('align'=>-1, 'sort'=>1, 'ops'=> NULL, 'link'=> 0, 'stotal' => 0, 'name' => 'ECS Dep',),
+			$c++ => array('align'=>1, 'sort'=>1, 'ops'=> NULL, 'link'=> 0, 'stotal' => 0, 'name' => 'PDCs',),
+			$c++ => array('align'=>-1, 'sort'=>1, 'ops'=> NULL, 'link'=> 0, 'stotal' => 0, 'name' => 'PDC Dep',),
+		),
+	);
+
+
+
+
+
+
+
+
+
+
+
 
 	$c =0;
 	$query[$qi++] = array(
@@ -282,7 +359,7 @@ function generic(){
 */
 /********************************Query****************************************/
 
-	$index = isset($_REQUEST['index']) ? $_REQUEST['index'] : 0;
+	$index = isset($_REQUEST['index']) ? $_REQUEST['index'] : 1;
 
 	if($index >= count($query))
 		die('Wrong selection! Please choose correct option from menu!');
@@ -309,6 +386,8 @@ function generic(){
 	$q .=" order by $sval $stype limit $from, $limit;";
 
 	print_a($q);
+
+	die();
 
 	$name = array(); $align= array(); $sort = array(); $link = array(); $ops = array(); $stotal = array();
 

@@ -27,9 +27,6 @@ function deallist(){
     $salesmanid = isset($_REQUEST['salesmanid']) ? $_REQUEST['salesmanid'] : 0;
     $period = isset($_REQUEST['period']) ? $_REQUEST['period'] : 0;
 
-//    $fromdt = isset($_REQUEST['fromdt']) ? $_REQUEST['fromdt'] : "";
-//    $todt = isset($_REQUEST['todt']) ? $_REQUEST['todt'] : "";
-
     $limit = isset($_REQUEST['limit']) ? $_REQUEST['limit'] : $_SESSION['ROWS_IN_TABLE'];
     $page = isset($_REQUEST['page']) ? $_REQUEST['page'] : 1;
     $sval = isset($_REQUEST['sval']) ? (empty($_REQUEST['sval']) ? $DEFAULT_SORT : $_REQUEST['sval'] ) : $DEFAULT_SORT;
@@ -62,8 +59,6 @@ function deallist(){
    		array(date('Y-M',strtotime('-2 months')), " AND hpdt >= DATE_FORMAT(CURRENT_DATE - INTERVAL 2 MONTH, '%Y/%m/01' ) AND hpdt < DATE_FORMAT( CURRENT_DATE - INTERVAL 1 MONTH, '%Y/%m/01') "),
    		array(date('Y-M',strtotime('-3 months')), " AND hpdt >= DATE_FORMAT(CURRENT_DATE - INTERVAL 3 MONTH, '%Y/%m/01' ) AND hpdt < DATE_FORMAT( CURRENT_DATE - INTERVAL 2 MONTH, '%Y/%m/01') "),
 // 		array("Last 2 Months", " AND hpdt >= DATE_FORMAT(CURRENT_DATE - INTERVAL 2 MONTH, '%Y/%m/01' ) AND hpdt < DATE_FORMAT( CURRENT_DATE, '%Y/%m/01') "),
-
-
 // 		array("Last Quarter", " AND hpdt >= MAKEDATE(YEAR(NOW()),1) + INTERVAL QUARTER(NOW())-2 QUARTER AND hpdt < MAKEDATE(YEAR(NOW()),1) + INTERVAL QUARTER(NOW())-1 QUARTER "),
    		array("Full Year: ".date('Y'), " AND year(hpdt) = year(curdate()) "),
    		array("Full Year: ".(date('Y')-1), " AND year(hpdt) = year(curdate())-1 "),
@@ -81,13 +76,7 @@ function deallist(){
 	);
 
     //Get List of all valid deals for centre for selected date period
-
-
-    $q = "SELECT sql_calc_found_rows d.pkid, d.pkid as rid, d.dealid, d.dealno, d.dealsts, d.dealnm, d.area, d.city as city, d.cancleflg, d.hpdt, d.financeamt, s.salesmanid as salesmanid, s.salesmannm as salesmannm, tcase(d.centre) as centre, s.active from ".$dbPrefix.".tbmdeal d join ".$dbPrefix.".tbadealsalesman a join ".$dbPrefix.".tbmsalesman s ";
-
-    $q .= " on d.dealid = a.dealid and a.salesmanid = s.salesmanid ";
-
-    $q .= " where 1 ";
+    $q = "SELECT sql_calc_found_rows d.pkid, d.pkid as rid, d.dealid, d.dealno, d.dealsts, d.dealnm, d.area, d.city as city, d.cancleflg, d.hpdt, d.financeamt, s.salesmanid as salesmanid, s.salesmannm as salesmannm, tcase(d.centre) as centre, s.active from ".$dbPrefix.".tbmdeal d join ".$dbPrefix.".tbadealsalesman a join ".$dbPrefix.".tbmsalesman s on d.dealid = a.dealid and a.salesmanid = s.salesmanid where 1 ";
 
 	if($centre != "")
 		$q .= " AND d.centre = '$centre' ";
@@ -101,20 +90,15 @@ function deallist(){
 		if(is_numeric($search)){
 			if(strlen($search) < 6)
 				$search = str_pad($search, 6, "0", STR_PAD_LEFT);
-			$q .= " AND (d.dealno = '$search' or d.dealid = $search)";
+			$q .= " AND (d.dealno = '$search')";
 		}
 		else
 			$q .= " AND (d.dealnm like '%$search%')";
     }
     else {
 		$q .= $period_options[$period][1];
-
-  //  	if($fromdt!="" && $todt !="")
-  //  		$q .= " AND hpdt >= '$fromdt' AND hpdt <= '$todt' ";
 	}
     $q .= " order by $sval $stype, rid desc limit $from, $limit";
-
- 	print_a($q);
 
 	$totalRows =0;
 	$t1 = executeSelect($q);
@@ -122,12 +106,9 @@ function deallist(){
 		$deals = $t1['r'];
 		$totalRows = $t1['found_rows'];
 	}
-
     ?>
 
     <div id="element-box">
-        <!--div class="t"><div class="t"><div class="t"></div></div></div-->
-
         <div class="m">
             <div id="blanket" style="display:none;"></div>
             <div id="popUpDiv" style="display:none;"></div>
@@ -174,10 +155,6 @@ function deallist(){
                          		<option value="<?=$s1['salesmanid']?>" <? if($salesmanid==$s1['salesmanid']){?> selected="selected" <? }?>><?=$s1['salesmannm']?><?=($s1['active']==1 ? ' (DC)' : '')?></option>
                          	<?}?>
                             </select>
-
-							<!--a onclick="PrintElement('ls-content-box');">Print</a-->
-
-                            <!---- From & To Date for HP Dates -->
                         </td>
                     </tr>
                 </tbody>
@@ -295,10 +272,7 @@ function deallist(){
 			<input name="sval" id="sval" value="<?=$sval?>" type="hidden">
 			<input name="stype" id="stype" value="<?=$stype?>" type="hidden">
             </form>
-            <!--div class="legend"><b>Lengends</b><br><b> NA / - :</b> Not Applicable / Not Attempted</div><div class="legend"><b>In Progress</b> Not Submitted</div><div class="legend"><b>Number:</b> Click to see results</div-->
             <div class="clr"></div>
         </div>
-        <!--div class="b"><div class="b"><div class="b"></div></div></div-->
-
     </div>
 <?}?>
