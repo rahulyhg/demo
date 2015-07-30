@@ -109,8 +109,8 @@ function od_report(){
 	   		else
 	   			$q .= " SUM(od > $od_amt) AS od, sum(case when od > $od_amt then od else 0 end) as od_amt, ";
 	   		$q .="
-	   		sum(case when bucket > 0 and bucket < 0.8 and od > $od_amt then 1 else 0 end) as B_0,
-	   		sum(case when bucket >= 0.8 and bucket < 1.5 then 1 else 0 end) as B_1,
+	   		sum(case when bucket > 0 and bucket < 0.5 and od > $od_amt then 1 else 0 end) as B_0,
+	   		sum(case when bucket >= 0.5 and bucket < 1.5 then 1 else 0 end) as B_1,
 	   		sum(case when bucket >= 1.5 and bucket < 2.5 then 1 else 0 end) as B_2,
 	   		sum(case when bucket >= 2.5 and bucket < 3.5 then 1 else 0 end) as B_3,
 	   		sum(case when bucket >= 3.5 and bucket < 4.5 then 1 else 0 end) as B_4,
@@ -126,7 +126,7 @@ function od_report(){
 	}
 
 	$q .= " l.dealid, l.dealno, l.dealnm, l.hpdt, l.cancleflg, l.dealsts, l.emi, l.ScheduledEMI, l.bankduedt, l.salesmanid, l.salesmannm, l.active, tcase(l.centre) as centre, rgt.received, l.emi - rgt.received AS od, ((l.emi - rgt.received)/l.ScheduledEMI) as bucket,
-	(case when (l.emi - rgt.received)/l.ScheduledEMI < 0.8 then 0 else round((l.emi - rgt.received)/l.ScheduledEMI) end) as od_bucket
+	round((l.emi - rgt.received)/l.ScheduledEMI) as od_bucket
     FROM
     	(SELECT d.dealid, d.dealno, d.dealnm, DATE_FORMAT(d.hpdt,'%d %b %Y') AS hpdt, d.dealsts, d.cancleflg, d.bankduedt, s.salesmanid, s.salesmannm, s.active, tcase(s.centre) as centre, IFNULL(SUM(u.dueamt + u.CollectionChrgs),0) AS emi, sc.MthlyAmt + sc.CollectionChrgs as ScheduledEMI
     	FROM lksa.tbmdeal d JOIN lksa.tbadealsalesman sa JOIN lksa.tbmsalesman s JOIN lksa.tbmpmntschd sc
@@ -192,7 +192,7 @@ function od_report(){
 			$q .= " having ".($od_amt == -1 ? "od < 0" : "od > $od_amt");
 			if($bucket !=-1){
 				if($bucket == 0)
-					$q .= " AND  od_bucket = 0 AND bucket < 0.8 ";
+					$q .= " AND  od_bucket = 0 AND bucket < 0.5 ";
 				else if($bucket == 7)
 					$q .= " AND  od_bucket >= $bucket ";
 				else
@@ -201,9 +201,7 @@ function od_report(){
 			$q .=" order by $sval $stype limit $from, $limit";
 			break;
 	}
-	print_a($q);
-
-	//die();
+//	print_a($q);
 
 	$totalRows =0;
 	$t1 = executeSelect($q);

@@ -26,7 +26,7 @@ function printScheduleSecondHalf($row, $balance, $dueValue){?>
 	</tr>
 <?}
 
-function printScheduleToday($total, $balance, $dueValue, $rowCount){?>
+function printScheduleToday($total, $balance, $dueValue, $rowCount, $tenure){?>
 	<tr>
 		<th class='textright'><?=$rowCount?></th>
 		<th class='dt textright'>As of Today</th>
@@ -38,7 +38,15 @@ function printScheduleToday($total, $balance, $dueValue, $rowCount){?>
 		<th class='textright'><?=nf($total['Penalty'])?></th>
 		<th class='textright'><?=nf($total['Others'])?></th>
 		<th class='textright'><?=nf($total['Received'])?></th>
-		<th class='red'><?=($dueValue != 0 ? 'Bucket='.($balance/$dueValue < 0.8 ? 0 : round($balance/$dueValue)) : '')?></th>
+		<?
+			$bucket = 0;
+			if($dueValue != 0 && $balance > 0){
+				$bucket = round($balance/$dueValue);
+				if($bucket == 0 && $tenure == $rowCount)
+					$bucket = 1;
+			}
+		?>
+		<th class='red'>Bucket=<?=$bucket?></th>
 	</tr>
 <?}
 
@@ -213,6 +221,7 @@ function deal(){
 	$bottom = $top - 1;
 	$sp = ($bottom == 0 ? 0 : $top / $bottom);
 	$emi = (($lamount * $mic) * $sp);
+	$tenure = $deal['period'];
 	?>
 	<div class="dealdetails">
 
@@ -551,7 +560,7 @@ function deal(){
 						$rowStarted = 0;
 					}
 					if($row['Date'] > date('Y-m-d H:i:s') && $shown == 0){
-						printScheduleToday($total, $balance, $dueValue, $i);
+						printScheduleToday($total, $balance, $dueValue, $i, $tenure);
 						$shown = 1;
 					}
 
@@ -582,7 +591,7 @@ function deal(){
 					}
 					else{
 						if($row['Date'] > date('Y-m-d H:i:s') && $shown == 0){
-							printScheduleToday($total, $balance, $dueValue, $i);
+							printScheduleToday($total, $balance, $dueValue, $i, $tenure);
 							$shown = 1;
 						}
 						$rowStarted = 1;
@@ -606,7 +615,7 @@ function deal(){
 				$rowStarted = 0;
 			}
 			if($shown == 0){
-				printScheduleToday($total, $balance, $dueValue, $i);
+				printScheduleToday($total, $balance, $dueValue, $i, $tenure);
 				$shown = 1;
 			}?>
 			</tbody>
