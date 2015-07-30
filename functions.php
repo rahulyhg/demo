@@ -77,6 +77,9 @@ function executeSingleRowSelect($q){
 
 
 
+function toMonthName($monthNum){
+	return date('F', mktime(0, 0, 0, $monthNum, 10));
+}
 
 function startsWith($haystack, $needle){return $needle === "" || strpos($haystack, $needle) === 0;}
 
@@ -248,6 +251,7 @@ function printHeader($title = 'Loksuvidha Reports', $menu='Y'){
 						<ul style="width: 144px;">
 							<li style="width: 144px;"><a class="icon-16-trash" href="index.php?task=od_report">OD Report</a></li>
 							<li class="separator" style="width: 144px;"><span></span></li>
+							<li style="width: 144px;"><a class="icon-16-article" href="index.php?task=generic&index=1">Recovery History</a></li>
 							<li style="width: 144px;"><a class="icon-16-article" href="index.php?task=per_field">Field Performance</a></li>
 							<li style="width: 144px;"><a class="icon-16-trash" href="index.php?task=per_caller">Caller Performance</a></li>
 							<li class="separator" style="width: 144px;"><span></span></li>

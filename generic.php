@@ -27,12 +27,10 @@ function generic(){
 
 	$fd = date('Y-M-01');
 
-
     //Get all centers
     $q1 = "SELECT tcase(centrenm) as centre from ".$dbPrefix.".tbmcentre order by centre";
 	$t1 = executeSelect($q1);
 	if($t1['row_count'] > 0){$centres = $t1['r'];}
-
 
 /********************************Filters****************************************/
 	$c = 0;
@@ -62,7 +60,7 @@ function generic(){
 	$filters ['hpdt']['options'][$c++] = array('value'=>"Old", 'query'=>" AND d.hpdt < '2014-04-01'");
 
 	$c =0;
-	$filters ['nac'] = array('title' => '','hover' => 'NACH Approved?','options' => array(
+	$filters ['pt_nac'] = array('title' => '','hover' => 'NACH Approved?','options' => array(
 		$c++ => array('value' => "--NACH--", 'query' => " "),
 		$c++ => array('value' => "Approved", 'query' => " AND n.ApprvFlg = 1 "),
 		$c++ => array('value' => "Rejected", 'query' => " AND n.ApprvFlg = 2 "),
@@ -71,7 +69,7 @@ function generic(){
 		)
 	);
 	$c =0;
-	$filters ['ecs'] = array('title' => '','hover' => 'ECS Approved?','options' => array(
+	$filters ['pt_ecs'] = array('title' => '','hover' => 'ECS Approved?','options' => array(
 		$c++ => array('value' => "--ECS--", 'query' => " "),
 		$c++ => array('value' => "Approved", 'query' => " AND  e.ApprvFlg = 1 "),
 		$c++ => array('value' => "Rejected", 'query' => " AND  e.ApprvFlg = 2 "),
@@ -80,7 +78,7 @@ function generic(){
 		)
 	);
 	$c =0;
-	$filters ['pdc'] = array('title' => '','hover' => 'PDC Available?','options' => array(
+	$filters ['pt_pdc'] = array('title' => '','hover' => 'PDC Available?','options' => array(
 		$c++ => array('value' => "-PDCs-", 'query' => " "),
 		$c++ => array('value' => "0 PDCs", 'query' => " AND  PendingPDC = 0 "),
 		$c++ => array('value' => "1 PDCs", 'query' => " AND  PendingPDC = 1 "),
@@ -161,31 +159,29 @@ function generic(){
 	$query = array(); $qi=0;
 
 	$c = 0;
+	//index == 0
 	$query[$qi++] = array(
 		'title'=> 'Pay Instrument Report',
 		'default_sort' => 'd.dealid',
 		'default_sort_type' => $DEFAULT_SORT_TYPE,
-		'filters' => array('hpdt', 'bucket', 'centre','duedt', 'nac','nacind', 'ecs', 'ecsind', 'pdc', 'pdcind'),
+		'filters' => array('hpdt', 'bucket', 'centre','duedt', 'pt_nac','nacind', 'pt_ecs', 'ecsind', 'pt_pdc', 'pdcind'),
 
 		'q' => "SELECT sql_calc_found_rows d.dealno, tcase(d.dealnm) AS dealnm, DATE_FORMAT(d.startduedt, '%d-%b-%y') AS startduedt, tcase(d.centre) AS Centre,
 			f.rgid,
 			CASE n.ApprvFlg WHEN 0 THEN 'Pending' WHEN 1 THEN 'Approved' WHEN 2 THEN 'Rejected' ELSE NULL END AS NAC, TRIM(CONCAT(DATE_FORMAT(n.ApproveRejectDt, '%d-%b-%y'),' ', NACRemark)) AS NACApproved, nind.NACDpstInd,
-			CASE e.ApprvFlg WHEN 0 THEN 'Pending' WHEN 1 THEN 'Approved' WHEN 2 THEN 'Rejected' ELSE NULL END AS ECS, DATE_FORMAT(e.ApproveRejectDt, '%d-%b-%y') AS ECSApproved, eind.ECSDpstInd,
+			CASE e.ApprvFlg WHEN 0 THEN 'Pending' WHEN 1 THEN 'Approved' WHEN 2 THEN 'Rejected' ELSE NULL END AS ECS, TRIM(CONCAT(DATE_FORMAT(e.ApproveRejectDt, '%d-%b-%y'),' ', ECSRemark)) AS ECSApproved, eind.ECSDpstInd,
 			pdc.PendingPDC, pdcind.PDCDpstInd
-
 			FROM lksa.tbmdeal d
-			LEFT JOIN lksa201516.tbxfieldrcvry f on d.dealid = f.dealid and f.mm=7
+			LEFT JOIN lksa201516.tbxfieldrcvry f on d.dealid = f.dealid and f.mm= ".date('n')."
 			LEFT JOIN (SELECT d.dealid, SUM(CASE WHEN p.PDCDt < DATE_SUB(CURRENT_DATE, INTERVAL DAYOFMONTH(CURRENT_DATE)-1 DAY) AND p.PDCDpstInd = 'N' THEN 1
 				WHEN p.PDCDt > DATE_SUB(CURRENT_DATE, INTERVAL DAYOFMONTH(CURRENT_DATE)-1 DAY) THEN 1 ELSE 0 END) AS PendingPDC FROM lksa.tbmdeal d JOIN lksa.tbmdealpdc p ON d.dealid = p.dealid AND d.dealsts = 1 GROUP BY p.dealid) AS pdc
 				ON d.dealid = pdc.dealid
 			LEFT JOIN lksa.tbmdealecs e ON e.dealid = d.dealid
 			LEFT JOIN lksa.tbmdealnac n ON n.dealid = d.dealid
-
-
 			LEFT JOIN (SELECT e.dealid, ECSDt, ECSDpstInd FROM lksa.tbmdeal d JOIN lksa.tbmdealecsdtl e ON e.dealid = d.dealid AND d.dealsts = 1 WHERE ECSDt BETWEEN '".date('Y-m-01')."' AND '".date('Y-m-t')."') eind ON eind.dealid = d.dealid
 			LEFT JOIN (SELECT n.dealid, NACDt, NACDpstInd FROM lksa.tbmdeal d JOIN lksa.tbmdealnacdtl n ON n.dealid = d.dealid AND d.dealsts = 1 WHERE NACDt BETWEEN '".date('Y-m-01')."' AND '".date('Y-m-t')."') nind ON nind.dealid = d.dealid
 			LEFT JOIN (SELECT p.dealid, PDCDt, PDCDpstInd FROM lksa.tbmdeal d JOIN lksa.tbmdealpdc    p ON p.dealid = d.dealid AND d.dealsts = 1 WHERE PDCDt BETWEEN '".date('Y-m-01')."' AND '".date('Y-m-t')."') pdcind ON pdcind.dealid = d.dealid
-			WHERE d.dealsts = 1 AND d.startduedt  <= ' ".date('Y-m-t')."'",
+			WHERE d.dealsts = 1 AND d.startduedt  <= ' ".date('Y-m-t')."' :hpdt :bucket :centre :duedt :pt_nac :nacind :pt_ecs :ecsind :pt_pdc :pdcind ",
 
 			/*
 			WHERE ECSDt BETWEEN DATE_SUB(CURRENT_DATE, INTERVAL DAYOFMONTH(CURRENT_DATE)-1 DAY) AND CURRENT_DATE
@@ -217,16 +213,15 @@ function generic(){
 		),
 	);
 
-
+	//index == 1
 	$c = 0;
-	$q = "SELECT tcase(t1.centre) as centre, COUNT(dealid) AS due,";
+	$q = "SELECT t1.mm, SUM(assigned_fd) AS assigned_fd, SUM(recovered_fd) AS recovered_fd, SUM(assigned_dm) AS assigned_dm, SUM(recovered_dm) AS recovered_dm, COUNT(dealid) AS assigned,  SUM(recovered) AS recovered, round(SUM(recovered)/COUNT(dealid)*100) as per";
 	for($b = 1; $b <=$BUCKET_SIZE; $b++){
-		$q .=" SUM(a$b) AS a$b, SUM(r$b) AS r$b, SUM(b$b) AS b$b, ";
+		$q .=", SUM(a$b) AS a$b, SUM(r$b) AS r$b ";
 	}
 	$q .= "
-	SUM(assigned_fd) AS assigned_fd, SUM(recovered_fd) AS recovered_fd, SUM(assigned_dm) AS assigned_dm, SUM(recovered_dm) AS recovered_dm, SUM(recovered) AS recovered
 	FROM (
-		SELECT d.inserttimestamp, d.dealid, d.OdDueAmt, d.dd, t.dealid AS rdid, t.rcptamt, d.OdDueAmt - t.rcptamt AS balance,
+		SELECT d.mm, d.inserttimestamp, d.dealid, d.OdDueAmt, d.dd, t.dealid AS rdid, t.rcptamt, d.OdDueAmt - t.rcptamt AS balance,
 		CASE WHEN d.dd = 1 THEN 1 ELSE 0 END AS assigned_fd, CASE WHEN d.dd = 1 AND t.dealid IS NOT NULL THEN 1 ELSE 0 END AS recovered_fd,
 		CASE WHEN d.dd != 1 THEN 1 ELSE 0 END AS assigned_dm, CASE WHEN d.dd != 1 AND t.dealid IS NOT NULL THEN 1 ELSE 0 END AS recovered_dm, ";
 
@@ -234,57 +229,45 @@ function generic(){
 		for($b = 1; $b < $BUCKET_SIZE; $b++){
 			$q .= " CASE WHEN d.rgid = $b THEN 1 ELSE 0 END AS a$b ,"; // Assigned
 			$q .= " CASE WHEN t.dealid IS Not NULL AND d.rgid = $b THEN 1 ELSE 0 END AS r$b ,"; // Recovered
-			$q .= " CASE WHEN t.dealid IS NULL AND d.rgid = $b THEN 1 ELSE 0 END AS b$b ,"; // Balance
 		}
 		//Last bucket
 		$q .= " CASE WHEN d.rgid >= $b THEN 1 ELSE 0 END AS a$b ,"; // Assigned
 		$q .= " CASE WHEN t.dealid IS Not NULL AND d.rgid >= $b THEN 1 ELSE 0 END AS r$b ,"; // Recovered
-		$q .= "	CASE WHEN t.dealid IS NULL AND d.rgid >= $b THEN 1 ELSE 0 END AS b$b, "; // Balance
 		$q .= " CASE WHEN t.dealid IS NOT NULL THEN 1 ELSE 0 END AS recovered, ";
 
 		$q .= " d.sraid, tcase(d.centre) as centre
 		FROM ".$dbPrefix_curr.".tbxfieldrcvry d
 		LEFT JOIN (
-			SELECT Month(r.rcptdt) as mm, r.dealid, SUM(rd.rcptamt) AS rcptamt FROM ".$dbPrefix_curr.".tbxdealrcpt r JOIN ".$dbPrefix_curr.".tbxdealrcptdtl rd ON r.rcptid = rd.rcptid
-				WHERE r.cclflg = 0 AND r.CBflg = 0 AND (rd.dctyp = 101 OR rd.dctyp = 111) and r.rcptpaymode = 1
-				GROUP BY r.dealid, month(r.rcptdt)
-		) AS t ON d.dealid = t.dealid and d.mm = t.mm
-	) t1 GROUP BY t1.centre having 1 ";
+			SELECT Month(r.rcptdt) as mm, r.dealid, SUM(rd.rcptamt) AS rcptamt FROM ".$dbPrefix_curr.".tbxdealrcpt r JOIN ".$dbPrefix_curr.".tbxdealrcptdtl rd ON r.rcptid = rd.rcptid WHERE r.cclflg = 0 AND r.CBflg = 0 AND (rd.dctyp = 101 OR rd.dctyp = 111) and r.rcptpaymode = 1
+			GROUP BY r.dealid, month(r.rcptdt)
+		) AS t ON d.dealid = t.dealid and d.mm = t.mm where 1 :hpdt :centre
+	) t1 GROUP BY t1.mm having 1 ";
 
+	$columns = array(
+		$c++ => array('align'=>-1, 'sort'=>0, 'ops'=> 'toMonthName', 'link'=> 0, 'stotal' => 0, 'name' => 'Month'),
+		$c++ => array('align'=>1, 'sort'=>0, 'ops'=> 'nf', 'link'=> 0, 'stotal' => 0, 'name' => 'OPENING','style'=>'background-color:#F5F5DC'),
+		$c++ => array('align'=>1, 'sort'=>0, 'ops'=> 'nf', 'link'=> 0, 'stotal' => 0, 'name' => 'O-REC','style'=>'background-color:#F5F5DC'),
+		$c++ => array('align'=>1, 'sort'=>0, 'ops'=> 'nf', 'link'=> 0, 'stotal' => 0, 'name' => 'NEW','style'=>'background-color:#FFE4C4'),
+		$c++ => array('align'=>1, 'sort'=>0, 'ops'=> 'nf', 'link'=> 0, 'stotal' => 0, 'name' => 'N-REC','style'=>'background-color:#FFE4C4'),
+		$c++ => array('align'=>1, 'sort'=>0, 'ops'=> 'nf', 'link'=> 0, 'stotal' => 0, 'name' => 'Total','style'=>'background-color:#F5F5DC'),
+		$c++ => array('align'=>1, 'sort'=>0, 'ops'=> 'nf', 'link'=> 0, 'stotal' => 0, 'name' => 'T-REC','style'=>'background-color:#F5F5DC'),
+		$c++ => array('align'=>1, 'sort'=>0, 'ops'=> 'nf', 'link'=> 0, 'stotal' => 0, 'name' => '%','style'=>'background-color:#F5F5DC'),
+	);
+	for($b = 1; $b <=$BUCKET_SIZE; $b++){
+		$style = ($b%2 == 1 ?  'background-color:#F6F6F6' : '');
+		$columns[$c++] = array('align'=>1, 'sort'=>0, 'ops'=> 'nf', 'link'=> 0, 'stotal' => 0, 'name' => 'B'.$b, 'style'=> $style);
+		$columns[$c++] = array('align'=>1, 'sort'=>0, 'ops'=> 'nf', 'link'=> 0, 'stotal' => 0, 'name' => '', 'style'=> $style);
+	}
 	$query[$qi++] = array(
 		'title'=> 'Recovery History',
 		'default_sort' => 't1.mm',
 		'default_sort_type' => 'ASC',
 		'filters' => array('hpdt', 'centre'),
 		'q' => $q,
-		'columns' => array(
-			$c++ => array('align'=>1, 'sort'=>1, 'ops'=> NULL, 'link'=> 1, 'stotal' => 0, 'name' => 'Deal No',),
-			$c++ => array('align'=>-1, 'sort'=>1, 'ops'=> NULL, 'link'=> 1, 'stotal' => 0, 'name' => 'Customer Name',),
-			$c++ => array('align'=>1, 'sort'=>1, 'ops'=> NULL, 'link'=> 0, 'stotal' => 0, 'name' => 'Start Date',),
-			$c++ => array('align'=>-1, 'sort'=>1, 'ops'=> NULL, 'link'=> 0, 'stotal' => 0, 'name' => 'Centre',),
-			$c++ => array('align'=>1, 'sort'=>1, 'ops'=> NULL, 'link'=> 0, 'stotal' => 0, 'name' => 'Bucket',),
-			$c++ => array('align'=>-1, 'sort'=>1, 'ops'=> NULL, 'link'=> 0, 'stotal' => 0, 'name' => 'NACH',),
-			$c++ => array('align'=>-1, 'sort'=>1, 'ops'=> NULL, 'link'=> 0, 'stotal' => 0, 'name' => 'NACH Remarks',),
-			$c++ => array('align'=>-1, 'sort'=>1, 'ops'=> NULL, 'link'=> 0, 'stotal' => 0, 'name' => 'NAC Dep',),
-			$c++ => array('align'=>-1, 'sort'=>1, 'ops'=> NULL, 'link'=> 0, 'stotal' => 0, 'name' => 'ECS',),
-			$c++ => array('align'=>-1, 'sort'=>1, 'ops'=> NULL, 'link'=> 0, 'stotal' => 0, 'name' => 'ECS Remarks',),
-			$c++ => array('align'=>-1, 'sort'=>1, 'ops'=> NULL, 'link'=> 0, 'stotal' => 0, 'name' => 'ECS Dep',),
-			$c++ => array('align'=>1, 'sort'=>1, 'ops'=> NULL, 'link'=> 0, 'stotal' => 0, 'name' => 'PDCs',),
-			$c++ => array('align'=>-1, 'sort'=>1, 'ops'=> NULL, 'link'=> 0, 'stotal' => 0, 'name' => 'PDC Dep',),
-		),
+		'columns' => $columns,
 	);
 
-
-
-
-
-
-
-
-
-
-
-
+	//index == 2
 	$c =0;
 	$query[$qi++] = array(
 		'title'=> 'Pay Instrument Summary',
@@ -304,8 +287,6 @@ function generic(){
 				ON d.dealid = pdc.dealid
 			LEFT JOIN lksa.tbmdealecs e ON e.dealid = d.dealid
 			LEFT JOIN lksa.tbmdealnac n ON n.dealid = d.dealid
-
-
 			LEFT JOIN (SELECT e.dealid, ECSDt, ECSDpstInd FROM lksa.tbmdeal d JOIN lksa.tbmdealecsdtl e ON e.dealid = d.dealid AND d.dealsts = 1 WHERE ECSDt BETWEEN '".date('Y-m-01')."' AND '".date('Y-m-t')."') eind ON eind.dealid = d.dealid
 			LEFT JOIN (SELECT n.dealid, NACDt, NACDpstInd FROM lksa.tbmdeal d JOIN lksa.tbmdealnacdtl n ON n.dealid = d.dealid AND d.dealsts = 1 WHERE NACDt BETWEEN '".date('Y-m-01')."' AND '".date('Y-m-t')."') nind ON nind.dealid = d.dealid
 			LEFT JOIN (SELECT p.dealid, PDCDt, PDCDpstInd FROM lksa.tbmdeal d JOIN lksa.tbmdealpdc    p ON p.dealid = d.dealid AND d.dealsts = 1 WHERE PDCDt BETWEEN '".date('Y-m-01')."' AND '".date('Y-m-t')."') pdcind ON pdcind.dealid = d.dealid
@@ -328,7 +309,7 @@ function generic(){
 		),
 	);
 
-
+	//index == 3
 	$c=0;
 	$query[$qi++] = array(
 		'id' => 1,
@@ -352,13 +333,8 @@ function generic(){
 		),
 	);
 	$c=0;
-/*	$query[$qi++] = array(
-		'id' => 1,
-		'active' => 0,
-	);
-*/
-/********************************Query****************************************/
 
+/********************************Query****************************************/
 	$index = isset($_REQUEST['index']) ? $_REQUEST['index'] : 1;
 
 	if($index >= count($query))
@@ -381,15 +357,15 @@ function generic(){
 
 	foreach($query[$index]['filters'] as $f){
 		$var = $f."_in";
-		$q .= $filters[$f]['options'][$$var]['query'];
+		$q = str_replace (':'.$f ,$filters[$f]['options'][$$var]['query'], $q);
 	}
 	$q .=" order by $sval $stype limit $from, $limit;";
 
-	print_a($q);
+//	print_a($q);
 
-	die();
+//	die();
 
-	$name = array(); $align= array(); $sort = array(); $link = array(); $ops = array(); $stotal = array();
+	$name = array(); $align= array(); $sort = array(); $link = array(); $ops = array(); $stotal = array(); $style = array();
 
 	foreach($query[$index]['columns'] as $i => $attr){
 		$name[$i] = $attr['name'];
@@ -398,6 +374,7 @@ function generic(){
 		$link[$i] = $attr['link'];
 		$ops[$i] = $attr['ops'];
 		$stotal[$i] = $attr['stotal'];
+		$style[$i] = isset($attr['style']) ? $attr['style'] : NULL;
 	}
 
 	$totalRows =0;
@@ -497,7 +474,7 @@ function generic(){
 					$i=0;
 				?><tr><td class="textright"><?=$slNo++?></td><?
 						foreach($row as $k => $v){?>
-							<td><?=($link[$i] == 0 ? (is_null($ops[$i]) ? $v : $ops[$i]($v)) : "<a target='_blank' href='?task=deal&dealno=".$row['dealno']."'>".(is_null($ops[$i]) ? $v : $ops[$i]($v))."</a>")?></td>
+							<td <?=(isset($style[$i]) ? 'style="'.$style[$i].'"' : '')?>><?=($link[$i] == 0 ? (is_null($ops[$i]) ? $v : $ops[$i]($v)) : "<a target='_blank' href='?task=deal&dealno=".$row['dealno']."'>".(is_null($ops[$i]) ? $v : $ops[$i]($v))."</a>")?></td>
 							<?$i++;$total[$k] += $v;
 						}?>
 					</tr>

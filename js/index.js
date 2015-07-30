@@ -74,9 +74,9 @@ function sort(field){
 function refresh(){	
 
 	if(ge('hpdt'))	 hpdt = ge('hpdt').value; else hpdt = 0;
-	if(ge('nac'))	 nac = ge('nac').value; else nac = 0;
-	if(ge('ecs'))	 ecs = ge('ecs').value; else ecs = 0;
-	if(ge('pdc'))	 pdc = ge('pdc').value; else pdc = 0;
+	if(ge('pt_nac'))	 pt_nac = ge('pt_nac').value; else pt_nac = 0;
+	if(ge('pt_ecs'))	 pt_ecs = ge('pt_ecs').value; else pt_ecs = 0;
+	if(ge('pt_pdc'))	 pt_pdc = ge('pt_pdc').value; else pt_pdc = 0;
 	if(ge('nacind'))	 nacind = ge('nacind').value; else nacind = 0;
 	if(ge('ecsind'))	 ecsind = ge('ecsind').value; else ecsind = 0;
 	if(ge('pdcind'))	 pdcind = ge('pdcind').value; else pdcind = 0;
@@ -97,7 +97,7 @@ function refresh(){
 	if(ge('limit')) 	limit = ge('limit').value; else limit = 30;
 	if(ge('page')) page = ge('page').value;
 
-	var url = btoa("hpdt="+ hpdt +"&nac=" + nac +"&ecs=" + ecs +"&pdc=" + pdc + "&pdcind=" + pdcind +"&nacind=" + nacind +"&ecsind=" + ecsind +"&pdcind=" + pdcind +"&bucket=" + bucket + "&duedt=" + duedt+ "&centre=" + centre + "&salesmanid="+ salesmanid + "&period="+ period  + "&city=" + city + "&status=" + status + "&fromdt=" + fromdt + "&todt=" + todt 
+	var url = btoa("hpdt="+ hpdt +"&pt_nac=" + pt_nac +"&pt_ecs=" + pt_ecs +"&pt_pdc=" + pt_pdc + "&pdcind=" + pdcind +"&nacind=" + nacind +"&ecsind=" + ecsind +"&pdcind=" + pdcind +"&bucket=" + bucket + "&duedt=" + duedt+ "&centre=" + centre + "&salesmanid="+ salesmanid + "&period="+ period  + "&city=" + city + "&status=" + status + "&fromdt=" + fromdt + "&todt=" + todt 
 	+ "&index=" + index + "&page=" + page + "&limit=" + limit +"&sval=" + sval + "&stype=" + stype);
 	j_query("#content-table").empty().html('<center>&nbsp;<br><img src="images/ajax-loader2.gif" style="border:none;" /><br>&nbsp;</center>');
 	window.location.assign("index.php?task=generic&url="+url);
