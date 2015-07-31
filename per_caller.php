@@ -7,6 +7,7 @@ else per_caller();
 
 function per_caller(){
     $dbPrefix = $_SESSION['DB_PREFIX'];
+    $user_dbPrefix = $_SESSION['USER_DB_PREFIX'];
 //	print_a($_REQUEST);
     $DEFAULT_SORT  = 'dd';$DEFAULT_SORT_TYPE = 'desc';
     $BUCKET_SIZE = 6;
@@ -45,6 +46,8 @@ function per_caller(){
 	$dd = isset($_REQUEST['dd']) ? $_REQUEST['dd'] : -1;
 	$compare = isset($_REQUEST['compare']) ? $_REQUEST['compare'] : 1;
 	$expired = isset($_REQUEST['expired']) ? $_REQUEST['expired'] : 0;
+	$callertag = isset($_REQUEST['callertag']) ? $_REQUEST['callertag'] : 0;
+	$sratag = isset($_REQUEST['sratag']) ? $_REQUEST['sratag'] : 0;
 	/**** Inputs **********/
 
 	/****** Pagination & Sorting *************/
@@ -78,6 +81,19 @@ function per_caller(){
 		$caller = $t1['r'];
 	}
 
+	//Get all Caller tags
+	$q1 = "SELECT tagid, description from ".$dbPrefix.".tbmrecoverytags where active = 2 and (allowtagto = 0 or allowtagto = 1) order by active asc";
+	$t1 = executeSelect($q1);
+	if($t1['row_count'] > 0){
+		$callertags = $t1['r'];
+	}
+
+	//Get all SRA tags
+	$q1 = "SELECT tagid, description from ".$dbPrefix.".tbmrecoverytags where active = 2 and (allowtagto = 0 or allowtagto = 2) order by active asc";
+	$t1 = executeSelect($q1);
+	if($t1['row_count'] > 0){
+		$sratags = $t1['r'];
+	}
 
    	$ason_options = array(
    		array(date('Y-M',strtotime('-0 month', strtotime($fd))), date('m',strtotime('-0 month', strtotime($fd))), date('Y', strtotime('-0 month', strtotime($fd)))),
@@ -184,9 +200,13 @@ function per_caller(){
 			break;
 
 		case 2: //Deal Wise
-			$q = " SELECT  SQL_CALC_FOUND_ROWS d.dealid, d.dealid, d.dealno, d.dealnm, d.hpdt, tcase(d.centre) as centre, d.emi ,d.callerid, b.realname as callernm, d.rgid, d.oddueamt, d.catid, d.dd, t.rc_sraid, t.rc_sranm, t.rcptamt
+			$q = " SELECT  SQL_CALC_FOUND_ROWS d.dealid, d.dealid, d.dealno, d.dealnm, d.hpdt, tcase(d.centre) as centre, d.emi ,d.callerid, b.realname as callernm, b.brkrnm as sranm, d.rgid, d.oddueamt, d.catid, d.dd, t.rc_sraid, t.rc_sranm, t.rcptamt,
+			d.recstatus_sra, d.rectagid_sra, d.rectagid_caller, st.description as tag_sra, ct.description as tag_caller
 			FROM ".$dbPrefix_curr.".tbxfieldrcvry d
-			LEFT JOIN ob_sa.tbmuser b ON d.callerid = b.userid AND b.recoveryagent = 1
+			LEFT JOIN ".$user_dbPrefix.".tbmuser b ON d.callerid = b.userid AND b.recoveryagent = 1
+			LEFT JOIN ".$dbPrefix.".tbmbroker b ON d.sraid = b.brkrid AND b.brkrtyp = 2
+			LEFT JOIN ".$dbPrefix.".tbmrecoverytags st ON d.rectagid_sra = st.tagid
+			LEFT JOIN ".$dbPrefix.".tbmrecoverytags ct ON d.rectagid_caller = ct.tagid
 			LEFT JOIN(
 				SELECT t1.dealid,t1.sraid, t1.rcptamt, b.brkrid AS rc_sraid, b.brkrnm AS rc_sranm
 				FROM
@@ -195,14 +215,19 @@ function per_caller(){
 						ON r.rcptid = rd.rcptid
 						WHERE r.cclflg = 0 AND r.CBflg = 0 AND (rd.dctyp = 101 OR rd.dctyp = 111) AND r.rcptpaymode = 1
 						AND r.rcptdt BETWEEN '$yy-$mm-01' AND '".date('Y-m-t',strtotime(date("$yy-$mm-01")))."'
-						GROUP BY r.dealid
-						HAVING rcptamt >= ".$MIN_RECEIPT_AMT."
+						GROUP BY r.dealid HAVING rcptamt >= ".$MIN_RECEIPT_AMT."
 					) AS t1 JOIN ".$dbPrefix.".tbmbroker b
 					ON t1.sraid = b.brkrid AND b.brkrtyp = 2
 			) AS t ON d.dealid = t.dealid WHERE d.mm = $mm ".$hp_options[$hpdt][1]." ";
 
 			if($centre != "")
 				$q .= " AND d.centre = '$centre' ";
+
+			if($callertag != 0)
+				$q .= " AND rectagid_caller = '$callertag' ";
+
+			if($sratag != 0)
+				$q .= " AND rectagid_sra = '$sratag' ";
 
 			switch($expired){
 				case 0://both
@@ -284,18 +309,18 @@ function per_caller(){
             <div id="blanket" style="display:none;"></div>
             <div id="popUpDiv" style="display:none;"></div>
             <form method="post" name="adminForm" onSubmit="return false;">
-            <table>
+            <table width="100%">
                 <tbody>
                     <tr>
-						<td align="left" width="100%">
+						<td align="left" width="30%" nowrap="nowrap">
                             <select name="type" id="type" class="inputbox" size="1" onchange="call_per_caller();">
                             	<option value=0 <? if($type ==0){?> selected="selected" <? }?>>Agent Wise</option>
                             	<option value=1 <? if($type ==1){?> selected="selected" <? }?>>Agent - Centre Wise</option>
                             	<option value=2 <? if($type ==2){?> selected="selected" <? }?>>Deal Wise</option>
                             </select>
 						</td>
-                        <td nowrap="nowrap">
-                            <b>For:</b> <select name="ason" id="ason" class="inputbox" size="1" onchange="call_per_caller();">
+                        <td width="60%" style='text-align:right'>
+                            <b>For:</b> <select name="ason" id="ason" class="inputbox" size="1" onchange="call_per_caller();" style='margin-bottom:10px'>
                             <?
                             	$i=0;
                             	foreach ($ason_options as $p){?>
@@ -370,6 +395,21 @@ function per_caller(){
 								<option value="0" <? if($rc_sraid =="0"){?> selected="selected" <? }?>>All Pending Cases</option>
 								<option value="-1" <? if($rc_sraid =="-1"){?> selected="selected" <? }?>>All Recovered Cases</option>
 							</select>
+                            <select name="callertag" id="callertag" class="inputbox" size="1" onchange="call_per_field();" <?=($type != 2 ? 'style="display:none"': '')?>>
+								<option value="0" <? if($sratag =="0"){?> selected="selected" <?}?>>- Caller TAG -</option>
+                         			<?foreach($callertags as $tag){?>
+										<option value="<?=$tag['tagid']?>" <?=($callertag==$tag['tagid'] ? 'selected="selected"' : '')?>><?=$tag['description']?></option>
+									<?}?>
+	    	                     	<option value="-1" <?=($callertag==-1 ? 'selected="selected"' : '')?>>Other</option>
+                            </select>
+
+                            <select name="sratag" id="sratag" class="inputbox" size="1" onchange="call_per_field();" <?=($type != 2 ? 'style="display:none"': '')?>>
+								<option value="0" <? if($sratag =="0"){?> selected="selected" <?}?>>- SRA TAG -</option>
+                         			<?foreach($sratags as $tag){?>
+		                         		<option value="<?=$tag['tagid']?>" <?=($sratag==$tag['tagid'] ? 'selected="selected"' : '')?>><?=$tag['description']?></option>
+	    	                     	<?}?>
+	    	                     	<option value="-1" <?=($sratag==-1 ? 'selected="selected"' : '')?>>Other</option>
+                            </select>
 
                         </td>
                     </tr>
@@ -417,12 +457,15 @@ function per_caller(){
 						<th class="textleft"><a href="javascript:sort('dealnm'); call_per_caller();">Name</a></th>
 						<th class="textleft date_column"><a href="javascript:sort('hpdt'); call_per_caller();">HP Date</a></th>
 						<th class="textleft"><a href="javascript:sort('centre'); call_per_caller();">Centre</a></th>
-						<th class="textleft"><a href="javascript:sort('callernm'); call_per_caller();">Assigned To</a></th>
+						<th class="textleft"><a href="javascript:sort('callernm'); call_per_caller();">Caller</a></th>
+						<th class="textleft"><a href="javascript:sort('sranm'); call_per_caller();">SRA</a></th>
+						<th class="textleft"><a href="javascript:sort('rc_sranm'); call_per_caller();">Recovered By</a></th>
 						<th class="textleft">EMI</th>
 						<th class="textleft"><a href="javascript:sort('rgid'); call_per_caller();">Bucket</a></th>
 						<th class="textleft"><a href="javascript:sort('oddueamt'); call_per_caller();">Due EMI</a></th>
 						<th class="textleft"><a href="javascript:sort('rcptamt'); call_per_caller();">Received</a></th>
-						<th class="textleft"><a href="javascript:sort('rc_sranm'); call_per_caller();">Recovered By</a></th>
+						<th class="textleft"><a href="javascript:sort('rectagid_caller'); call_per_field();">Caller tag</a></th>
+						<th class="textleft"><a href="javascript:sort('rectagid_sra'); call_per_field();">SRA tag</a></th>
 						<th class="textleft"></th>
 					<?
 					break;
@@ -624,11 +667,14 @@ function per_caller(){
 										<td class="textright"><?=date('d-M-Y',strtotime($deal['hpdt']))?></td>
 										<td class="textleft"><?=titleCase($deal['centre'])?></td>
 										<td class="textleft"><?=titleCase($deal['callernm'])?></td>
+										<td class="textleft"><?=titleCase($deal['sranm'])?></td>
+										<td class="textleft"><?=titleCase($deal['rc_sranm'])?></td>
 										<td class="textright"><?=nf($deal['emi'],0)?></td>
 										<td class="textright"><?=$deal['rgid']?></td>
 										<td class="textright"><?=nf($deal['oddueamt'],0)?></td>
 										<td class="textright <?=($deal['oddueamt'] - $deal['rcptamt'] < 5 ? 'green' : 'red')?>"><?=nf($deal['rcptamt'],0)?></td>
-										<td class="textleft"><?=titleCase($deal['rc_sranm'])?></td>
+										<td class="textleft"><?=$deal['tag_caller']?></td>
+										<td class="textleft"><?=$deal['tag_sra']?></td>
 										<td class="textleft">
 										<?if($_SESSION['user_id'] == $deal['callerid']){?>
 											<a href="javascript:callAddComment(<?=$deal['dealid']?>);"><img src="/images/comments.png" width="14"/></a>
@@ -767,11 +813,13 @@ function per_caller(){
 									<th class='textright'>&nbsp;</th>
 									<th class='textleft'>&nbsp;</th>
 									<th class='textleft'>&nbsp;</th>
-									<th class='textleft'>Total (Shown Rows Only)</th>
+									<th colspan='2' class='textleft'>Total (Shown Rows Only)</th>
+									<th></th>
 									<th class='textright'>&nbsp;</th>
 									<th class='textright'>&nbsp;</th>
 									<th class='textright'><?=nf($total['due'])?></th>
 									<th class="textright"><?=nf($total['recovered'])?></th>
+									<th></th>
 									<th></th>
 									<th></th>
 								</tr>

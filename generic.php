@@ -267,46 +267,20 @@ function generic(){
 		'columns' => $columns,
 	);
 
+
+	$q = "";
+
 	//index == 2
-	$c =0;
+	$c=0;
 	$query[$qi++] = array(
-		'title'=> 'Pay Instrument Summary',
-		'default_sort' => 'd.fy',
-		'default_sort_type' => $DEFAULT_SORT_TYPE,
-		'filters' => array(),
-		'q' => "SELECT sql_calc_found_rows d.dealno, tcase(d.dealnm) AS dealnm, DATE_FORMAT(d.startduedt, '%d-%b-%y') AS startduedt, tcase(d.centre) AS Centre,
-			f.rgid,
-			CASE n.ApprvFlg WHEN 0 THEN 'Pending' WHEN 1 THEN 'Approved' WHEN 2 THEN 'Rejected' ELSE NULL END AS NAC, TRIM(CONCAT(DATE_FORMAT(n.ApproveRejectDt, '%d-%b-%y'),' ', NACRemark)) AS NACApproved, nind.NACDpstInd,
-			CASE e.ApprvFlg WHEN 0 THEN 'Pending' WHEN 1 THEN 'Approved' WHEN 2 THEN 'Rejected' ELSE NULL END AS ECS, DATE_FORMAT(e.ApproveRejectDt, '%d-%b-%y') AS ECSApproved, eind.ECSDpstInd,
-			pdc.PendingPDC, pdcind.PDCDpstInd
-
-			FROM lksa.tbmdeal d
-			LEFT JOIN lksa201516.tbxfieldrcvry f on d.dealid = f.dealid and f.mm=7
-			LEFT JOIN (SELECT d.dealid, SUM(CASE WHEN p.PDCDt < DATE_SUB(CURRENT_DATE, INTERVAL DAYOFMONTH(CURRENT_DATE)-1 DAY) AND p.PDCDpstInd = 'N' THEN 1
-				WHEN p.PDCDt > DATE_SUB(CURRENT_DATE, INTERVAL DAYOFMONTH(CURRENT_DATE)-1 DAY) THEN 1 ELSE 0 END) AS PendingPDC FROM lksa.tbmdeal d JOIN lksa.tbmdealpdc p ON d.dealid = p.dealid AND d.dealsts = 1 GROUP BY p.dealid) AS pdc
-				ON d.dealid = pdc.dealid
-			LEFT JOIN lksa.tbmdealecs e ON e.dealid = d.dealid
-			LEFT JOIN lksa.tbmdealnac n ON n.dealid = d.dealid
-			LEFT JOIN (SELECT e.dealid, ECSDt, ECSDpstInd FROM lksa.tbmdeal d JOIN lksa.tbmdealecsdtl e ON e.dealid = d.dealid AND d.dealsts = 1 WHERE ECSDt BETWEEN '".date('Y-m-01')."' AND '".date('Y-m-t')."') eind ON eind.dealid = d.dealid
-			LEFT JOIN (SELECT n.dealid, NACDt, NACDpstInd FROM lksa.tbmdeal d JOIN lksa.tbmdealnacdtl n ON n.dealid = d.dealid AND d.dealsts = 1 WHERE NACDt BETWEEN '".date('Y-m-01')."' AND '".date('Y-m-t')."') nind ON nind.dealid = d.dealid
-			LEFT JOIN (SELECT p.dealid, PDCDt, PDCDpstInd FROM lksa.tbmdeal d JOIN lksa.tbmdealpdc    p ON p.dealid = d.dealid AND d.dealsts = 1 WHERE PDCDt BETWEEN '".date('Y-m-01')."' AND '".date('Y-m-t')."') pdcind ON pdcind.dealid = d.dealid
-			WHERE d.dealsts = 1 AND d.startduedt  <= ' ".date('Y-m-t')."'",
-
-		'columns' => array(
-			$c++ => array('align'=>1, 'sort'=>1, 'ops'=> NULL, 'link'=> 1, 'stotal' => 0, 'name' => 'Deal No',),
-			$c++ => array('align'=>-1, 'sort'=>1, 'ops'=> NULL, 'link'=> 1, 'stotal' => 0, 'name' => 'Customer Name',),
-			$c++ => array('align'=>1, 'sort'=>1, 'ops'=> NULL, 'link'=> 0, 'stotal' => 0, 'name' => 'Start Date',),
-			$c++ => array('align'=>-1, 'sort'=>1, 'ops'=> NULL, 'link'=> 0, 'stotal' => 0, 'name' => 'Centre',),
-			$c++ => array('align'=>1, 'sort'=>1, 'ops'=> NULL, 'link'=> 0, 'stotal' => 0, 'name' => 'Bucket',),
-			$c++ => array('align'=>-1, 'sort'=>1, 'ops'=> NULL, 'link'=> 0, 'stotal' => 0, 'name' => 'NACH',),
-			$c++ => array('align'=>-1, 'sort'=>1, 'ops'=> NULL, 'link'=> 0, 'stotal' => 0, 'name' => 'NACH Remarks',),
-			$c++ => array('align'=>-1, 'sort'=>1, 'ops'=> NULL, 'link'=> 0, 'stotal' => 0, 'name' => 'NAC Dep',),
-			$c++ => array('align'=>-1, 'sort'=>1, 'ops'=> NULL, 'link'=> 0, 'stotal' => 0, 'name' => 'ECS',),
-			$c++ => array('align'=>-1, 'sort'=>1, 'ops'=> NULL, 'link'=> 0, 'stotal' => 0, 'name' => 'ECS Remarks',),
-			$c++ => array('align'=>-1, 'sort'=>1, 'ops'=> NULL, 'link'=> 0, 'stotal' => 0, 'name' => 'ECS Dep',),
-			$c++ => array('align'=>1, 'sort'=>1, 'ops'=> NULL, 'link'=> 0, 'stotal' => 0, 'name' => 'PDCs',),
-			$c++ => array('align'=>-1, 'sort'=>1, 'ops'=> NULL, 'link'=> 0, 'stotal' => 0, 'name' => 'PDC Dep',),
-		),
+		'id' => 1,
+		'active' => 1,
+		'title'=> 'Monthly Recovery',
+		'default_sort' => 'd.dd',
+		'default_sort_type' => 'ASC',
+		'filters' => array('hpdt', 'centre'),
+		'q' => $q,
+		'columns' => $columns,
 	);
 
 	//index == 3
@@ -332,7 +306,6 @@ function generic(){
 			$c++ => array('align'=>-1, 'sort'=>1, 'ops'=> NULL, 'link'=> 0, 'stotal' => 0, 'name' => 'Vehicle Model',),
 		),
 	);
-	$c=0;
 
 /********************************Query****************************************/
 	$index = isset($_REQUEST['index']) ? $_REQUEST['index'] : 1;

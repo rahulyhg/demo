@@ -198,6 +198,9 @@ function call_per_field(){
 	if(ge('centre'))	centre = ge('centre').value;	else centre = "";
 	if(ge('bucket'))	bucket = ge('bucket').value; else bucket = -1;
 	if(ge('expired'))	expired = ge('expired').value; else expired = 0;
+	if(ge('sratag'))	sratag = ge('sratag').value; else sratag = 0;
+	if(ge('callertag'))	callertag = ge('callertag').value; else callertag = 0;
+
 
 	if(ge('compare'))	compare = ge('compare').value; else compare= 0;
 	if(ge('dd'))	dd = ge('dd').value; else dd = -1;
@@ -209,7 +212,7 @@ function call_per_field(){
 	if(ge('limit')) limit = ge('limit').value; else limit = 30;
 	if(ge('page')) page = ge('page').value; else page = 1;
 
-	var url = btoa("&hpdt=" + hpdt + "&centre=" + centre + "&sraid="+ sraid + "&rc_sraid="+ rc_sraid + "&dd=" + dd + "&ason=" + ason + "&by=" + by + "&type=" + type + "&bucket=" + bucket +"&expired=" + expired +"&compare=" + compare + "&page=" + page + "&limit=" + limit +"&sval=" + sval + "&stype=" + stype);
+	var url = btoa("&hpdt=" + hpdt + "&centre=" + centre + "&sraid="+ sraid + "&rc_sraid="+ rc_sraid + "&dd=" + dd + "&ason=" + ason + "&by=" + by + "&type=" + type + "&bucket=" + bucket +"&expired=" + expired + "&sratag="+ sratag + "&callertag="+ callertag + "&compare=" + compare + "&page=" + page + "&limit=" + limit +"&sval=" + sval + "&stype=" + stype);
 	j_query("#content-table").empty().html('<center>&nbsp;<br><img src="images/ajax-loader2.gif" style="border:none;" /><br>&nbsp;</center>');
 	window.location.assign("index.php?task=per_field&url="+url);
 }
@@ -221,6 +224,8 @@ function call_per_caller(){
 	if(ge('centre'))	centre = ge('centre').value;	else centre = "";
 	if(ge('bucket'))	bucket = ge('bucket').value; else bucket = -1;
 	if(ge('expired'))	expired = ge('expired').value; else expired = 0;
+	if(ge('sratag'))	sratag = ge('sratag').value; else sratag = 0;
+	if(ge('callertag'))	callertag = ge('callertag').value; else callertag = 0;
 
 	if(ge('compare'))	compare = ge('compare').value; else compare= 0;
 	if(ge('dd'))	dd = ge('dd').value; else dd = -1;
@@ -232,7 +237,7 @@ function call_per_caller(){
 	if(ge('limit')) limit = ge('limit').value; else limit = 30;
 	if(ge('page')) page = ge('page').value; else page = 1;
 
-	var url = btoa("&hpdt=" + hpdt + "&centre=" + centre + "&callerid="+ callerid + "&rc_sraid="+ rc_sraid + "&dd=" + dd + "&ason=" + ason + "&type=" + type + "&bucket=" + bucket +"&expired=" + expired +"&compare=" + compare  
+	var url = btoa("&hpdt=" + hpdt + "&centre=" + centre + "&callerid="+ callerid + "&rc_sraid="+ rc_sraid + "&dd=" + dd + "&ason=" + ason + "&type=" + type + "&bucket=" + bucket +"&expired=" + expired + "&sratag="+ sratag + "&callertag="+ callertag +"&compare=" + compare  
 	+ "&page=" + page + "&limit=" + limit +"&sval=" + sval + "&stype=" + stype);
 	j_query("#content-table").empty().html('<center>&nbsp;<br><img src="images/ajax-loader2.gif" style="border:none;" /><br>&nbsp;</center>');
 	window.location.assign("index.php?task=per_caller&url="+url);
