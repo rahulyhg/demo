@@ -127,9 +127,9 @@ function deal(){
 
 	$q13 = "
 		select * from
-		(select mm, yy, fr.sraid, fr.callerid, b.brkrnm as sra, u.realname as caller from $dbPrefix_curr.tbxfieldrcvry fr left join lksa.tbmbroker b on b.brkrid = fr.sraid left join ob_sa.tbmuser u on u.userid = fr.callerid where dealid = $dealid
+		(select mm, yy, fr.sraid, fr.callerid, b.brkrnm as sra, u.realname as caller, fr.rectagid_sra, st.description as tag_sra, fr.rectagid_caller, ct.description as tag_caller, fr.reccomment_sra, fr.reccomment_caller from $dbPrefix_curr.tbxfieldrcvry fr left join lksa.tbmbroker b on b.brkrid = fr.sraid left join ob_sa.tbmuser u on u.userid = fr.callerid left join lksa.tbmrecoverytags st on fr.rectagid_sra = st.tagid left join lksa.tbmrecoverytags ct on fr.rectagid_caller = ct.tagid where fr. dealid = $dealid
 		union
-		select mm, yy, fr.sraid, fr.callerid, b.brkrnm as sra, u.realname as caller from $dbPrefix_last.tbxfieldrcvry fr left join lksa.tbmbroker b on b.brkrid = fr.sraid left join ob_sa.tbmuser u on u.userid = fr.callerid where dealid = $dealid
+		select mm, yy, fr.sraid, fr.callerid, b.brkrnm as sra, u.realname as caller, fr.rectagid_sra, st.description as tag_sra, fr.rectagid_caller, ct.description as tag_caller, fr.reccomment_sra, fr.reccomment_caller from $dbPrefix_last.tbxfieldrcvry fr left join lksa.tbmbroker b on b.brkrid = fr.sraid left join ob_sa.tbmuser u on u.userid = fr.callerid left join lksa.tbmrecoverytags st on fr.rectagid_sra = st.tagid left join lksa.tbmrecoverytags ct on fr.rectagid_caller = ct.tagid where fr. dealid = $dealid
 		) t order by yy desc, mm desc limit 0, 4";
 
 	$q14 = "
@@ -493,11 +493,14 @@ function deal(){
 		</table>
 	</fieldset>
 
-		<fieldset><legend>Assignments</legend>
-			<?if(isset($assignment)){?>
+	<div class="clr"></div>
+
+	<div class="assignment">
+		<div class='header'>Deal Assignment</div>
+		<?if(isset($assignment)){?>
 			<table class="adminlist" width="100%" cellspacing="1">
 				<thead>
-					<tr><th>Month</th><th>SRA</th><th>Caller</th></tr>
+					<tr><th>Month</th><th>SRA</th><th>Caller</th><th>SRA Tag</th><th>SRA Comment</th><th>Caller Tag</th><th>Caller Comment</th></tr>
 				</thead>
 				<tbody>
 					<?foreach($assignment as $row){?>
@@ -505,6 +508,10 @@ function deal(){
 						<td><?=date('M', mktime(0, 0, 0, $row['mm'], 10))?>-<?=substr($row['yy'],-2)?></td>
 						<td><?=titleCase($row['sra'])?></td>
 						<td><?=titleCase($row['caller'])?></td>
+						<td><?=titleCase($row['tag_sra'])?></td>
+						<td><?=titleCase($row['reccomment_sra'])?></td>
+						<td><?=titleCase($row['tag_caller'])?></td>
+						<td><?=titleCase($row['reccomment_caller'])?></td>
 					</tr>
 					<?}?>
 				</tbody>
@@ -513,14 +520,10 @@ function deal(){
 			else{?>
 				No Assigments since last financial year for this deal
 			<?}?>
-		</fieldset>
-	</div> <!-- Deal Details -->
-	<div class="clr"></div>
+	</div>
 
 	<div class="dealstatus">
-	<!-- New Look -->
-		<!--fieldset><legend>EMI Schedule & Clearing Status</legend-->
-		<h3>EMI Schedule & Clearing Status</h3>
+		<div class="header">EMI Schedule & Clearing Status</div>
 		<?
 			$sql = $q4; $p=0;
 			$t1 = executeSelect($sql);

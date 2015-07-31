@@ -309,18 +309,18 @@ function per_caller(){
             <div id="blanket" style="display:none;"></div>
             <div id="popUpDiv" style="display:none;"></div>
             <form method="post" name="adminForm" onSubmit="return false;">
-            <table width="100%">
+            <table width="100%" id='filterbar'>
                 <tbody>
                     <tr>
-						<td align="left" width="30%" nowrap="nowrap">
+						<td align="left" width="20%" nowrap="nowrap">
                             <select name="type" id="type" class="inputbox" size="1" onchange="call_per_caller();">
                             	<option value=0 <? if($type ==0){?> selected="selected" <? }?>>Agent Wise</option>
                             	<option value=1 <? if($type ==1){?> selected="selected" <? }?>>Agent - Centre Wise</option>
                             	<option value=2 <? if($type ==2){?> selected="selected" <? }?>>Deal Wise</option>
                             </select>
 						</td>
-                        <td width="60%" style='text-align:right'>
-                            <b>For:</b> <select name="ason" id="ason" class="inputbox" size="1" onchange="call_per_caller();" style='margin-bottom:10px'>
+                        <td width="75%" style='text-align:right'>
+                            <b>For:</b> <select name="ason" id="ason" class="inputbox" size="1" onchange="call_per_caller();">
                             <?
                             	$i=0;
                             	foreach ($ason_options as $p){?>
@@ -395,7 +395,7 @@ function per_caller(){
 								<option value="0" <? if($rc_sraid =="0"){?> selected="selected" <? }?>>All Pending Cases</option>
 								<option value="-1" <? if($rc_sraid =="-1"){?> selected="selected" <? }?>>All Recovered Cases</option>
 							</select>
-                            <select name="callertag" id="callertag" class="inputbox" size="1" onchange="call_per_field();" <?=($type != 2 ? 'style="display:none"': '')?>>
+                            <select name="callertag" id="callertag" class="inputbox" size="1" onchange="call_per_caller();" <?=($type != 2 ? 'style="display:none"': '')?>>
 								<option value="0" <? if($sratag =="0"){?> selected="selected" <?}?>>- Caller TAG -</option>
                          			<?foreach($callertags as $tag){?>
 										<option value="<?=$tag['tagid']?>" <?=($callertag==$tag['tagid'] ? 'selected="selected"' : '')?>><?=$tag['description']?></option>
@@ -403,7 +403,7 @@ function per_caller(){
 	    	                     	<option value="-1" <?=($callertag==-1 ? 'selected="selected"' : '')?>>Other</option>
                             </select>
 
-                            <select name="sratag" id="sratag" class="inputbox" size="1" onchange="call_per_field();" <?=($type != 2 ? 'style="display:none"': '')?>>
+                            <select name="sratag" id="sratag" class="inputbox" size="1" onchange="call_per_caller();" <?=($type != 2 ? 'style="display:none"': '')?>>
 								<option value="0" <? if($sratag =="0"){?> selected="selected" <?}?>>- SRA TAG -</option>
                          			<?foreach($sratags as $tag){?>
 		                         		<option value="<?=$tag['tagid']?>" <?=($sratag==$tag['tagid'] ? 'selected="selected"' : '')?>><?=$tag['description']?></option>
@@ -415,8 +415,6 @@ function per_caller(){
                     </tr>
                 </tbody>
             </table>
-
-            <br>
 
 <!--Table Started --->
             <table class="adminlist" cellspacing="1" width="100%" id="ls-content-box">
@@ -464,8 +462,8 @@ function per_caller(){
 						<th class="textleft"><a href="javascript:sort('rgid'); call_per_caller();">Bucket</a></th>
 						<th class="textleft"><a href="javascript:sort('oddueamt'); call_per_caller();">Due EMI</a></th>
 						<th class="textleft"><a href="javascript:sort('rcptamt'); call_per_caller();">Received</a></th>
-						<th class="textleft"><a href="javascript:sort('rectagid_caller'); call_per_field();">Caller tag</a></th>
-						<th class="textleft"><a href="javascript:sort('rectagid_sra'); call_per_field();">SRA tag</a></th>
+						<th class="textleft"><a href="javascript:sort('rectagid_caller'); call_per_caller();">Caller tag</a></th>
+						<th class="textleft"><a href="javascript:sort('rectagid_sra'); call_per_caller();">SRA tag</a></th>
 						<th class="textleft"></th>
 					<?
 					break;

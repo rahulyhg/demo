@@ -539,14 +539,14 @@ table.adminlist tbody tr .b6, table.adminlist thead th.b6, table.adminlist tfoot
     background: linear-gradient(to bottom right,  green, lightgreen); /* Standard syntax (must be last) */
 }
 .cash {color:green; font-weight:bold;}
-.deallogs .header {
+.deallogs .header, .dealdetails .header {
     font-weight: bold;
     font-size: 13px;
     color: beige;
-    margin: 0px 0px 5px 0px;
-    padding: 6px 0 6px 2px;
-    background-color: brown;
-    line-height:20px;
+    margin: 15px 0px 2px 0px;
+    padding: 4px 0 4px 1px;
+    background-color: #778899;
+    line-height:16px;
 }
 .logitem {
     margin: 4px 2px 5px 2px;
@@ -601,3 +601,4 @@ table.adminlist tbody tr .b6, table.adminlist thead th.b6, table.adminlist tfoot
     font-size: 14px;
     line-height: 20px
 }
+#filterbar select {margin-bottom:10px;}

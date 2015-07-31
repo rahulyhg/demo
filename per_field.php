@@ -320,10 +320,10 @@ function per_field(){
             <div id="blanket" style="display:none;"></div>
             <div id="popUpDiv" style="display:none;"></div>
             <form method="post" name="adminForm" onSubmit="return false;">
-            <table width="100%">
+            <table width="100%" id='filterbar'>
                 <tbody>
                     <tr>
-						<td align="left" width="30%" nowrap="nowrap">
+						<td align="left" width="20%" nowrap="nowrap">
                             <select name="by" id="by" class="inputbox" size="1" onchange="call_per_field();">
                             	<option value=0 <? if($by ==0){?> selected="selected" <? }?>>Deal Center</option>
                             	<option value=1 <? if($by ==1){?> selected="selected" <? }?>>Rec Centre</option>
@@ -335,7 +335,7 @@ function per_field(){
                             	<option value=2 <? if($type ==2){?> selected="selected" <? }?>>Deal Wise</option>
                             </select>
 						</td>
-                        <td width="60%" style='text-align:right'>
+                        <td width="75%" style='text-align:right'>
                             <b>For:</b> <select name="ason" id="ason" class="inputbox" size="1" onchange="call_per_field();" style='margin-bottom:10px'>
                             <?
                             	$i=0;
@@ -443,8 +443,6 @@ function per_field(){
                     </tr>
 					</tbody>
             </table>
-
-            <br>
 
 <!--Table Started --->
             <table class="adminlist" cellspacing="1" width="100%" id="ls-content-box">
