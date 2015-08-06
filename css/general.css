@@ -514,15 +514,6 @@ tr.unbilled td{font-style:italic}
 .bg_grey{background-color:#ccc}
 .center {text-align:center;}
 #print{background:url(../images/icon-16-print.png) no-repeat;height:16px;}
-table.adminlist tbody tr.fd, table.adminlist thead th.fd, .fd{background-color:#F5F5DC}/*First day of the month*/
-table.adminlist tbody tr.dm, table.adminlist thead th.dm, .dm{background-color:#FFE4C4}
-table.adminlist tbody tr.total, table.adminlist thead th.total,.total{background-color:#F5F5DC}/*Total*/
-table.adminlist tbody tr.unassigned, .unassigned {background-color:#CDB79E}/*Unassigned deals*/
-table.adminlist tbody tr.insurance, .insurance, .insurance a {background-color:#FF0000; color:#fff}/*Insurance*/
-table.adminlist tbody tr.write-off, .write-off, .write-off a {background-color:#EE3A8C; color:#fff}/*Write-Off*/
-table.adminlist tbody tr.police-station, .police-station, .police-station a {background-color:#BC8F8F; color:#fff}/*Vehicle in Police Station*/
-table.adminlist tbody tr.multiple, .multiple, .multiplr a{background-color:#8B7D68; /*burlywood*/ color:#fff}/*Money taken by multiple people*/
-
 .legend-box {padding:2px; margin-top: 10px;}
 table.adminlist tbody tr .b1, table.adminlist thead th.b1, table.adminlist tfoot tr .b1 {background-color:#FCFCFC}
 table.adminlist tbody tr .b2, table.adminlist thead th.b2, table.adminlist tfoot tr .b2 {background-color:#F6F6F6}
@@ -602,3 +593,18 @@ table.adminlist tbody tr .b6, table.adminlist thead th.b6, table.adminlist tfoot
     line-height: 20px
 }
 #filterbar select {margin-bottom:10px;}
+table.adminlist tbody tr:nth-child(even) {background-color: #ecf6fc !important;}
+table.adminlist tbody tr.over {background-color:#ccc !important;}
+/*table.adminlist tbody tr.fd, table.adminlist thead th.fd, .fd{background-color:#F5F5DC}/*First day of the month*/
+table.adminlist tbody tr.dm, table.adminlist thead th.dm, .dm{background-color:#FFE4C4}
+*/
+table.adminlist tbody tr.total, table.adminlist thead th.total,.total{background-color:#F5F5DC !important;}/*Total*/
+table.adminlist tbody tr.unassigned, .unassigned {background-color:#CDB79E !important;}/*Unassigned deals*/
+table.adminlist tbody tr.seized, .seized, .seized a {background-color:#000 !important; color:#fff !important;}/*Seized*/
+table.adminlist tbody tr.insurance, .insurance, .insurance a {background-color:#FF0000 !important;; color:#fff}/*Insurance*/
+/*table.adminlist tbody tr.write-off, .write-off, .write-off a {background-color:#EE3A8C !important;; color:#fff} Write-Off*/
+table.adminlist tbody tr.police-station, .police-station, .police-station a {background-color:#BC8F8F !important;; color:#fff}/*Vehicle in Police Station*/
+table.adminlist tbody tr.multiple, .multiple, .multiplr a{background-color:#8B7D68 !important;; /*burlywood*/ color:#fff}/*Money taken by multiple people*/
+
+
+

@@ -9,12 +9,12 @@ function per_caller(){
     $dbPrefix = $_SESSION['DB_PREFIX'];
     $user_dbPrefix = $_SESSION['USER_DB_PREFIX'];
 //	print_a($_REQUEST);
-    $DEFAULT_SORT  = 'dd';$DEFAULT_SORT_TYPE = 'desc';
+    $DEFAULT_SORT  = 'dealnm ';$DEFAULT_SORT_TYPE = 'asc';
     $BUCKET_SIZE = 6;
 	$MIN_RECEIPT_AMT = 450;
 
 	$fy = ""; $last_fy = "";
-	$default_sort_value  = ' dd desc, dealid asc ';
+	$default_sort_value  = ' dealnm asc ';
 
 	if(date('n') < 4){ //lastyear-thisyear
 		$fy = date('y',  strtotime('-1 year'))."-".date('y');
@@ -100,9 +100,9 @@ function per_caller(){
    		array(date('Y-M',strtotime('-1 month', strtotime($fd))), date('m',strtotime('-1 month', strtotime($fd))), date('Y', strtotime('-1 month', strtotime($fd)))),
    		array(date('Y-M',strtotime('-2 month', strtotime($fd))), date('m',strtotime('-2 month', strtotime($fd))), date('Y', strtotime('-2 month', strtotime($fd)))),
 		array(date('Y-M',strtotime('-3 month', strtotime($fd))), date('m',strtotime('-3 month', strtotime($fd))), date('Y', strtotime('-3 month', strtotime($fd)))),
-/*
    		array(date('Y-M',strtotime('-4 month', strtotime($fd))), date('m',strtotime('-4 month', strtotime($fd))), date('Y', strtotime('-4 month', strtotime($fd)))),
-   		array(date('Y-M',strtotime('-5 month', strtotime($fd))), date('m',strtotime('-5 month', strtotime($fd))), date('Y', strtotime('-5 month', strtotime($fd)))),
+/*
+  		array(date('Y-M',strtotime('-5 month', strtotime($fd))), date('m',strtotime('-5 month', strtotime($fd))), date('Y', strtotime('-5 month', strtotime($fd)))),
    		array(date('Y-M',strtotime('-6 month', strtotime($fd))), date('m',strtotime('-6 month', strtotime($fd))), date('Y', strtotime('-6 month', strtotime($fd))))
 */
    	);
@@ -142,25 +142,25 @@ function per_caller(){
 			FROM (
 			SELECT d.inserttimestamp, d.dealid, tcase(d.centre) as centre, d.OdDueAmt, d.dd, t.dealid AS rdid, t.rcptamt, d.OdDueAmt - t.rcptamt AS balance,
 			CASE WHEN d.dd = 1 THEN 1 ELSE 0 END AS assigned_fd,
-			CASE WHEN d.dd = 1 AND t.dealid IS NOT NULL THEN 1 ELSE 0 END AS recovered_fd,
+			CASE WHEN d.dd = 1 AND (t.dealid IS NOT NULL or d.rec_flg !=0) THEN 1 ELSE 0 END AS recovered_fd,
 			CASE WHEN d.dd != 1 THEN 1 ELSE 0 END AS assigned_dm,
-			CASE WHEN d.dd != 1 AND t.dealid IS NOT NULL THEN 1 ELSE 0 END AS recovered_dm,";
+			CASE WHEN d.dd != 1 AND (t.dealid IS NOT NULL or d.rec_flg !=0) THEN 1 ELSE 0 END AS recovered_dm,";
 
 			for($b = 1; $b < $BUCKET_SIZE; $b++){
 				$q .= " CASE WHEN d.rgid = $b THEN 1 ELSE 0 END AS a$b ,"; // Assigned
-				$q .= " CASE WHEN t.dealid IS Not NULL AND d.rgid = $b THEN 1 ELSE 0 END AS r$b ,"; // Recovered
-				$q .= " CASE WHEN t.dealid IS NULL AND d.rgid = $b THEN 1 ELSE 0 END AS b$b ,"; // Balance
+				$q .= " CASE WHEN (t.dealid IS Not NULL or d.rec_flg !=0) AND d.rgid = $b THEN 1 ELSE 0 END AS r$b ,"; // Recovered
+				$q .= " CASE WHEN (t.dealid IS NULL or d.rec_flg =0) AND d.rgid = $b THEN 1 ELSE 0 END AS b$b ,"; // Balance
 			}
 			$q .= " CASE WHEN d.rgid >= $b THEN 1 ELSE 0 END AS a$b ,"; // Assigned
-			$q .= " CASE WHEN t.dealid IS Not NULL AND d.rgid >= $b THEN 1 ELSE 0 END AS r$b ,"; // Recovered
-			$q .= "	CASE WHEN t.dealid IS NULL AND d.rgid >= $b THEN 1 ELSE 0 END AS b$b, "; // Balance
+			$q .= " CASE WHEN (t.dealid IS Not NULL or d.rec_flg !=0) AND d.rgid >= $b THEN 1 ELSE 0 END AS r$b ,"; // Recovered
+			$q .= "	CASE WHEN (t.dealid IS NULL or d.rec_flg =0) AND d.rgid >= $b THEN 1 ELSE 0 END AS b$b, "; // Balance
 
-			$q .= " CASE WHEN t.dealid IS NOT NULL THEN 1 ELSE 0 END AS recovered ,d.callerid, b.realname as callernm, b.active as calleractive
+			$q .= " CASE WHEN (t.dealid IS NOT NULL or d.rec_flg !=0) THEN 1 ELSE 0 END AS recovered ,d.callerid, b.realname as callernm, b.active as calleractive
 			FROM ".$dbPrefix_curr.".tbxfieldrcvry d
 			LEFT JOIN ob_sa.tbmuser b on d.callerid = b.userid and b.recoveryagent = 1
 			LEFT JOIN (
 				SELECT r.dealid, SUM(rd.rcptamt) AS rcptamt FROM ".$dbPrefix_curr.".tbxdealrcpt r JOIN ".$dbPrefix_curr.".tbxdealrcptdtl rd ON r.rcptid = rd.rcptid
-					WHERE r.cclflg = 0 AND r.CBflg = 0 AND (rd.dctyp = 101 OR rd.dctyp = 111) and r.rcptpaymode = 1
+					WHERE r.cclflg = 0 AND r.CBflg = 0 AND (rd.dctyp = 101 OR rd.dctyp = 102 OR rd.dctyp = 111) and r.rcptpaymode = 1
 					AND r.rcptdt between '$yy-$mm-01' and '".date('Y-m-t',strtotime(date("$yy-$mm-01")))."'
 					GROUP BY r.dealid having rcptamt >= ".$MIN_RECEIPT_AMT."
 			) AS t ON d.dealid = t.dealid WHERE d.mm = $mm ".$hp_options[$hpdt][1];
@@ -200,7 +200,7 @@ function per_caller(){
 			break;
 
 		case 2: //Deal Wise
-			$q = " SELECT  SQL_CALC_FOUND_ROWS d.dealid, d.dealid, d.dealno, d.dealnm, d.hpdt, tcase(d.centre) as centre, d.emi ,d.callerid, b.realname as callernm, b.brkrnm as sranm, d.rgid, d.oddueamt, d.catid, d.dd, t.rc_sraid, t.rc_sranm, t.rcptamt,
+			$q = " SELECT  SQL_CALC_FOUND_ROWS d.dealid, d.dealid, d.dealno, d.dealnm, d.hpdt, tcase(d.centre) as centre, d.emi ,d.callerid, b.realname as callernm, b.brkrnm as sranm, d.rgid, d.oddueamt, d.catid, d.dd, d.rec_flg, d.rec_sraid, d.rec_total, d.rec_od, t.rc_sraid, t.rc_sranm, t.rcptamt,
 			d.recstatus_sra, d.rectagid_sra, d.rectagid_caller, st.description as tag_sra, ct.description as tag_caller
 			FROM ".$dbPrefix_curr.".tbxfieldrcvry d
 			LEFT JOIN ".$user_dbPrefix.".tbmuser b ON d.callerid = b.userid AND b.recoveryagent = 1
@@ -213,7 +213,7 @@ function per_caller(){
 					(SELECT r.dealid, r.sraid, SUM(rd.rcptamt) AS rcptamt
 						FROM lksa201516.tbxdealrcpt r JOIN ".$dbPrefix_curr.".tbxdealrcptdtl rd
 						ON r.rcptid = rd.rcptid
-						WHERE r.cclflg = 0 AND r.CBflg = 0 AND (rd.dctyp = 101 OR rd.dctyp = 111) AND r.rcptpaymode = 1
+						WHERE r.cclflg = 0 AND r.CBflg = 0 AND (rd.dctyp = 101 OR rd.dctyp = 102 OR rd.dctyp = 111) AND r.rcptpaymode = 1
 						AND r.rcptdt BETWEEN '$yy-$mm-01' AND '".date('Y-m-t',strtotime(date("$yy-$mm-01")))."'
 						GROUP BY r.dealid HAVING rcptamt >= ".$MIN_RECEIPT_AMT."
 					) AS t1 JOIN ".$dbPrefix.".tbmbroker b
@@ -251,10 +251,13 @@ function per_caller(){
 				case "": //Recovered & Pending Cases
 					break;
 				case 0: //Pending Cases
-					$q .= " and t.rc_sraid is null ";
+					$q .= " and t.rc_sraid is null and d.rec_flg = 0 ";
+//					$q .= " and d.rec_flg = 0";
+
 					break;
 				case  -1://All Recovered Cases
-					$q .= " and t.rc_sraid > 0 ";
+					$q .= " and (t.rc_sraid is not null or d.rec_flg != 0) ";
+//					$q .= " and d.rec_flg != 0 ";
 					break;
 				default://Exact Match
 					$q .= " and t.rc_sraid = '$rc_sraid' ";
@@ -646,7 +649,9 @@ function per_caller(){
 
 									case 2://Dealwise
 										$color = '';
-										if($deal['catid'] == 12) // Insurance Case
+										if($deal['catid'] == 25) // Seized Vehicle
+											$color = 'seized';
+										else if($deal['catid'] == 12) // Insurance Case
 											$color = 'insurance';
 										else if ($deal['catid'] == 13) // Police Station
 											$color = 'police-station';
@@ -666,11 +671,17 @@ function per_caller(){
 										<td class="textleft"><?=titleCase($deal['centre'])?></td>
 										<td class="textleft"><?=titleCase($deal['callernm'])?></td>
 										<td class="textleft"><?=titleCase($deal['sranm'])?></td>
-										<td class="textleft"><?=titleCase($deal['rc_sranm'])?></td>
+										<?if($deal['rec_flg'] == 0){?>
+											<td class="textleft"><?=titleCase($deal['rc_sranm'])?></td>
+										<?}else{?>
+											<td class="textleft"><?=titleCase($deal['rec_sraid'])?></td>
+										<?}?>
 										<td class="textright"><?=nf($deal['emi'],0)?></td>
 										<td class="textright"><?=$deal['rgid']?></td>
 										<td class="textright"><?=nf($deal['oddueamt'],0)?></td>
-										<td class="textright <?=($deal['oddueamt'] - $deal['rcptamt'] < 5 ? 'green' : 'red')?>"><?=nf($deal['rcptamt'],0)?></td>
+										<td class="textright <?=($deal['oddueamt'] - $deal['rcptamt'] < 5 ? 'green' : 'red')?>">
+											<?=($deal['rec_flg'] == 0 ? nf($deal['rcptamt'],0) : nf($deal['rec_total'],0))?>
+										</td>
 										<td class="textleft"><?=$deal['tag_caller']?></td>
 										<td class="textleft"><?=$deal['tag_sra']?></td>
 										<td class="textleft">
@@ -848,6 +859,7 @@ function per_caller(){
          <?if($type==2){?>
          	<table class="adminlist legend-box" cellspacing = "1" style="width:80% !important;margin-left:10%">
 				<tr><th class="">Colour Coding</th>
+					<td class="seized center">Seized</td>
          			<td class="insurance center">Insurance Case</td>
          			<td class="write-off center">Write Off Case</td>
          			<td class="police-station center">Vehicle in Police Station</td>

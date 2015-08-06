@@ -44,11 +44,7 @@ function dealcomment(){
 	$q12 = "select sum(round(DueAmt+CollectionChrgs)) as due from lksa.tbmduelist where dealid = $dealid and Duedt <= curdate();";
 
 	$q13 = "
-		select * from
-		(select mm, yy, fr.dealnm, fr.dealno, fr.city, fr.centre, fr.rgid as bucket, fr.DueAmt, fr.dd, fr.model, fr.Mobile, fr.GuarantorMobile, fr.sraid, fr.callerid, fr.recstatus_sra, fr.rectagid_caller, fr.reccomment_caller, DATE_FORMAT(fr.callerupdatedt,'%d-%b-%y') as callerupdatedt, b.brkrnm as sra, u.realname as caller from $dbPrefix_curr.tbxfieldrcvry fr left join lksa.tbmbroker b on b.brkrid = fr.sraid left join ob_sa.tbmuser u on u.userid = fr.callerid where dealid = $dealid
-		union
-		 select mm, yy, fr.dealnm, fr.dealno, fr.city, fr.centre, fr.rgid as bucket, fr.DueAmt, fr.dd, fr.model, fr.Mobile, fr.GuarantorMobile, fr.sraid, fr.callerid, fr.recstatus_sra, fr.rectagid_caller, fr.reccomment_caller, DATE_FORMAT(fr.callerupdatedt,'%d-%b-%y') as callerupdatedt, b.brkrnm as sra, u.realname as caller from $dbPrefix_last.tbxfieldrcvry fr left join lksa.tbmbroker b on b.brkrid = fr.sraid left join ob_sa.tbmuser u on u.userid = fr.callerid where dealid = $dealid
-		) t order by yy desc, mm desc limit 0, 4";
+		select mm, yy, fr.dealnm, fr.dealno, fr.city, fr.centre, fr.rgid as bucket, fr.DueAmt, fr.dd, fr.model, fr.Mobile, fr.GuarantorMobile, fr.sraid, fr.callerid, fr.recstatus_sra, fr.rectagid_caller, fr.reccomment_caller, DATE_FORMAT(fr.callerupdatedt,'%d-%b-%y') as callerupdatedt, b.brkrnm as sra, u.realname as caller from $dbPrefix_curr.tbxfieldrcvry fr left join lksa.tbmbroker b on b.brkrid = fr.sraid left join ob_sa.tbmuser u on u.userid = fr.callerid where dealid = $dealid and fr.mm = $mm;";
 
 	$q15 = "select tagid, description from ".$dbPrefix.".tbmRecoveryTags where active = 2 and (allowtagto = 0 or allowtagto = 1)";//Allowed to all and allowed to SRA
 
@@ -225,7 +221,7 @@ function dealcomment(){
 								<?foreach($tags as $t){?>
 									<option value="<?=$t['tagid']?>" <? if($tagid  == $t['tagid']){?> selected="selected" <? }?>><?=$t['description']?></option>
 								<?}?>
-								<option value="-1"  <?if($tagid == -1){?> selected="selected" <?}?>>Other</option>
+								<!--option value="-1"  <?if($tagid == -1){?> selected="selected" <?}?>>Other</option-->
 							</select>
 						</td>
 					</tr>

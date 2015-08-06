@@ -76,6 +76,10 @@ function executeSingleRowSelect($q){
 ************************************************************/
 
 
+function df($dt){
+	if(is_null($dt)) return null;
+	return date('d-M-Y', strtotime($dt));
+}
 
 function toMonthName($monthNum){
 	return date('F', mktime(0, 0, 0, $monthNum, 10));
@@ -245,17 +249,30 @@ function printHeader($title = 'Loksuvidha Reports', $menu='Y'){
 						<ul style="width: 118px;">
 							<li style="width: 118px;"><a class="icon-16-menu" href="index.php?task=se_report">Sales Report</a></li>
 							<li style="width: 118px;"><a class="icon-16-menu" href="index.php?task=dl_report">Dealer Report</a></li>
+							<li style="width: 118px;"><a class="icon-16-menu" href="index.php?task=generic&index=6">Disbursements</a></li>
+							<li style="width: 118px;"><a class="icon-16-trash" href="index.php?task=generic&index=10">Pending Vehicles</a></li>
+							<li class="separator" style="width: 144px;"><span></span></li>
+							<li style="width: 118px;"><a class="icon-16-trash" href="index.php?task=generic&index=0">Pay Instruments</a></li>
 						</ul>
 					</li>
 					<li class="node "><a>Recovery</a>
 						<ul style="width: 144px;">
 							<li style="width: 144px;"><a class="icon-16-trash" href="index.php?task=od_report">OD Report</a></li>
 							<li class="separator" style="width: 144px;"><span></span></li>
-							<li style="width: 144px;"><a class="icon-16-article" href="index.php?task=generic&index=1">Recovery History</a></li>
 							<li style="width: 144px;"><a class="icon-16-article" href="index.php?task=per_field">Field Performance</a></li>
+							<li style="width: 144px;"><a class="icon-16-trash" href="index.php?task=generic&index=9">EMI Recovery</a></li>
 							<li style="width: 144px;"><a class="icon-16-trash" href="index.php?task=per_caller">Caller Performance</a></li>
 							<li class="separator" style="width: 144px;"><span></span></li>
-							<li style="width: 144px;"><a class="icon-16-trash" href="index.php?task=generic&index=0">Pay Instruments</a></li>
+							<li style="width: 144px;"><a class="icon-16-article" href="index.php?task=generic&index=1">Monthly Recovery</a></li>
+							<li style="width: 144px;"><a class="icon-16-article" href="index.php?task=generic&index=7">Daily Recovery</a></li>
+							<li class="separator" style="width: 144px;"><span></span></li>
+							<li style="width: 144px;"><a class="icon-16-trash" href="index.php?task=generic&index=4">Caller Tag Entry</a></li>
+							<li style="width: 144px;"><a class="icon-16-trash" href="index.php?task=generic&index=5">SRA Tag Entry</a></li>
+							<li class="separator" style="width: 144px;"><span></span></li>
+							<li style="width: 144px;"><a class="icon-16-trash" href="index.php?task=generic&index=2">Caller Tag Summary</a></li>
+							<li style="width: 144px;"><a class="icon-16-trash" href="index.php?task=generic&index=3">SRA Tag Summary</a></li>
+							<li class="separator" style="width: 144px;"><span></span></li>
+							<li style="width: 144px;"><a class="icon-16-trash" href="index.php?task=generic&index=8">Cash Collection</a></li>
 						</ul>
 					</li>
 				</ul>
@@ -287,7 +304,6 @@ printFooter();
 }
 
 function printFooter(){?>
-
 <noscript>Warning! JavaScript must be enabled for proper operation of the Administrator back-end.</noscript>
 <div id="border-bottom">
 <div><div></div></div></div>
@@ -365,7 +381,7 @@ function printBox($task=""){?>
 	<div id="content-box">
 		<div class="border">
 			<div class="padding">
-				<div id="content-table">
+				<div class="stripeMe" id="content-table">
 					<? include_once "$task.php";?>
 				</div>
 				<div class="clr"></div>

@@ -82,8 +82,12 @@ function refresh(){
 	if(ge('pdcind'))	 pdcind = ge('pdcind').value; else pdcind = 0;
 	if(ge('bucket'))	 bucket = ge('bucket').value; else bucket = "";
 	if(ge('duedt'))	 duedt = ge('duedt').value; else duedt = "";
-	
+	if(ge('mm'))	 mm = ge('mm').value; else mm = 0;
+	if(ge('dealer'))	 dealer = ge('dealer').value; else dealer = 0;
+	if(ge('salesman'))	 salesman = ge('salesman').value; else salesman = 0;
+	if(ge('disbursed'))	 disbursed = ge('disbursed').value; else disbursed = 0;
 	if(ge('centre')) 	centre = ge('centre').value; else centre = "";
+	if(ge('reccentre')) 	reccentre = ge('reccentre').value; else reccentre = "";
 	if(ge('salesmanid')) 	salesmanid = ge('salesmanid').value; else salesmanid = 0;
 	if(ge('period')) 	period = ge('period').value; else period = 0;
 	if(ge('city')) 	city = ge('city').value; else city = "";
@@ -97,8 +101,7 @@ function refresh(){
 	if(ge('limit')) 	limit = ge('limit').value; else limit = 30;
 	if(ge('page')) page = ge('page').value;
 
-	var url = btoa("hpdt="+ hpdt +"&pt_nac=" + pt_nac +"&pt_ecs=" + pt_ecs +"&pt_pdc=" + pt_pdc + "&pdcind=" + pdcind +"&nacind=" + nacind +"&ecsind=" + ecsind +"&pdcind=" + pdcind +"&bucket=" + bucket + "&duedt=" + duedt+ "&centre=" + centre + "&salesmanid="+ salesmanid + "&period="+ period  + "&city=" + city + "&status=" + status + "&fromdt=" + fromdt + "&todt=" + todt 
-	+ "&index=" + index + "&page=" + page + "&limit=" + limit +"&sval=" + sval + "&stype=" + stype);
+	var url = btoa("hpdt="+ hpdt +"&pt_nac=" + pt_nac +"&pt_ecs=" + pt_ecs +"&pt_pdc=" + pt_pdc + "&pdcind=" + pdcind +"&nacind=" + nacind +"&ecsind=" + ecsind +"&pdcind=" + pdcind +"&bucket=" + bucket + "&duedt=" + duedt+ "&centre=" + centre + "&reccentre=" + reccentre + "&dealer=" + dealer +"&salesman=" + salesman + "&disbursed=" + disbursed +"&salesmanid="+ salesmanid + "&period="+ period  + "&city=" + city + "&status=" + status + "&fromdt=" + fromdt + "&todt=" + todt + "&mm=" +mm + "&index=" + index + "&page=" + page + "&limit=" + limit +"&sval=" + sval + "&stype=" + stype);
 	j_query("#content-table").empty().html('<center>&nbsp;<br><img src="images/ajax-loader2.gif" style="border:none;" /><br>&nbsp;</center>');
 	window.location.assign("index.php?task=generic&url="+url);
 }
