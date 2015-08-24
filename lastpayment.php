@@ -75,7 +75,7 @@ function lastpayment(){
 
 			$m_in_fy = (date('n') <= 3 ? 9+date('n') : date('n')-3);
 			for($i = 1; $i <= $m_in_fy; $i++){
-				$mn = $i+3;
+				$mn = ($i+3)%12;
 				$q .= ",SUM(CASE WHEN t.fy = '$fy' AND MONTH(hpdt) = $mn THEN 1 ELSE 0 END) AS '".toMonthName($mn)."'";
 				$colspan++;
 			}

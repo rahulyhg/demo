@@ -281,6 +281,10 @@ function printHeader($title = 'Loksuvidha Reports', $menu='Y'){
 							<li style="width: 144px;"><a class="icon-16-trash" href="index.php?task=generic&index=8">Cash Collection</a></li>
 							<li style="width: 144px;"><a class="icon-16-trash" href="index.php?task=generic&index=15">Regular Recovery</a></li>
 							<li style="width: 144px;"><a class="icon-16-trash" href="index.php?task=lastpayment">Last Payment</a></li>
+							<li class="separator" style="width: 144px;"><span></span></li>
+							<li style="width: 144px;"><a class="icon-16-trash" href="index.php?task=generic&index=18">Bouncing Report</a></li>
+							<li style="width: 144px;"><a class="icon-16-trash" href="index.php?task=generic&index=20">Non-Starter Cases</a></li>
+
 						</ul>
 					</li>
 				</ul>

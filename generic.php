@@ -874,6 +874,165 @@ function generic(){
 		),
 	);
 
+	//index == 17
+	$c =0;$qi = 17;
+	$m_in_fy = (date('n') <= 3 ? 9+date('n') : date('n')-3);
+
+	$q = "SELECT DAY(rcptdt) AS d, COUNT(rcptid) AS total, SUM(CASE WHEN cbflg = -1 THEN 1 ELSE 0 END) AS Bounced, (SUM(CASE WHEN cbflg = -1 THEN 1 ELSE 0 END)/COUNT(rcptid)*100) AS Per ";
+
+
+	for($i = 1; $i <= $m_in_fy; $i++){
+		$mn = ($i+3)%12; $startdt = date("Y-$mn-01"); $enddt = date("Y-$mn-t");
+		$q .= "
+		,SUM(CASE WHEN rcptdt BETWEEN '$startdt' AND '$enddt' THEN 1 ELSE 0 END) AS '$mn-t', SUM(CASE WHEN cbflg = -1 AND rcptdt BETWEEN '$startdt' AND '$enddt' THEN 1 ELSE 0 END) AS '$mn-b'";
+	}
+	$q .= " FROM $dbPrefix.tbmdeal d join $dbPrefix_curr.tbxdealrcpt r on d.dealid = r.dealid :hpdt :centre WHERE cclflg = 0 AND (rcptpaymode = 2 OR rcptpaymode = 6)
+		GROUP BY DAY(rcptdt)";
+
+	$query[$qi] = array(
+		'title'=> 'Bouncing Report - Daywise',
+		'default_sort' => 'd',
+		'default_sort_type' => 'asc',
+		'filters' => array('hpdt', 'centre'),
+		'alternate' => array( array(18, 'Show Centrewise'),array(19, 'Show Executivewise')),
+		'row_limit' => 50,
+		'q' => $q,
+		'columns' => array(
+			$c++ => array('align'=>0, 'sort'=>1, 'ops'=> NULL, 'link'=> 0, 'stotal' => 2, 'name' => 'Day',),
+			$c++ => array('align'=>1, 'sort'=>1, 'ops'=> 'nf', 'link'=> 0, 'stotal' => 1, 'name' => 'Deposit',),
+			$c++ => array('align'=>1, 'sort'=>1, 'ops'=> 'nf', 'link'=> 0, 'stotal' => 1, 'name' => 'Bounced',),
+			$c++ => array('align'=>1, 'sort'=>1, 'ops'=> 'nf', 'link'=> 0, 'stotal' => 0, 'name' => '%', 'suffix'=>'%'),
+		),
+	);
+
+	for($i=1; $i <= $m_in_fy; $i++){
+		$mn = ($i+3)%12;
+		$query[$qi]['columns'][$c++] = array('align'=>1, 'sort'=>0, 'ops'=> 'nf', 'link'=> 0, 'stotal' => 1, 'name' => toMonthName($mn),);
+		$query[$qi]['columns'][$c++] = array('align'=>1, 'sort'=>0, 'ops'=> 'nf', 'link'=> 0, 'stotal' => 1, 'name' => toMonthName($mn).'-Bncd','style'=>'background-color:#ecf6fc');
+	}
+
+	//index == 18
+	$c =0;$qi = 18;
+	$m_in_fy = (date('n') <= 3 ? 9+date('n') : date('n')-3);
+
+	$q = "SELECT tcase(centre) as centre, COUNT(rcptid) AS total, SUM(CASE WHEN cbflg = -1 THEN 1 ELSE 0 END) AS Bounced, (SUM(CASE WHEN cbflg = -1 THEN 1 ELSE 0 END)/COUNT(rcptid)*100) AS Per ";
+
+	for($i = 1; $i <= $m_in_fy; $i++){
+		$mn = ($i+3)%12; $startdt = date("Y-$mn-01"); $enddt = date("Y-$mn-t");
+		$q .= "
+		,SUM(CASE WHEN rcptdt BETWEEN '$startdt' AND '$enddt' THEN 1 ELSE 0 END) AS '$mn-t', SUM(CASE WHEN cbflg = -1 AND rcptdt BETWEEN '$startdt' AND '$enddt' THEN 1 ELSE 0 END) AS '$mn-b'";
+	}
+	$q .= " FROM $dbPrefix.tbmdeal d join $dbPrefix_curr.tbxdealrcpt r on d.dealid = r.dealid :hpdt WHERE cclflg = 0 AND (rcptpaymode = 2 OR rcptpaymode = 6)
+		GROUP BY centre ";
+
+	$query[$qi] = array(
+		'title'=> 'Bouncing Report - CentreWise',
+		'default_sort' => 'per',
+		'default_sort_type' => 'desc',
+		'filters' => array('hpdt'),
+		'alternate' => array( array(17, 'Show Daywise'),array(19, 'Show Executivewise')),
+		'row_limit' => 50,
+		'q' => $q,
+		'columns' => array(
+			$c++ => array('align'=>-1, 'sort'=>1, 'ops'=> NULL, 'link'=> 0, 'stotal' => 2, 'name' => 'Centre',),
+			$c++ => array('align'=>1, 'sort'=>1, 'ops'=> 'nf', 'link'=> 0, 'stotal' => 1, 'name' => 'Deposit',),
+			$c++ => array('align'=>1, 'sort'=>1, 'ops'=> 'nf', 'link'=> 0, 'stotal' => 1, 'name' => 'Bounced',),
+			$c++ => array('align'=>1, 'sort'=>1, 'ops'=> 'nf', 'link'=> 0, 'stotal' => 0, 'name' => '%', 'suffix'=>'%'),
+		),
+	);
+
+	for($i=1; $i <= $m_in_fy; $i++){
+		$mn = ($i+3)%12;
+		$query[$qi]['columns'][$c++] = array('align'=>1, 'sort'=>0, 'ops'=> 'nf', 'link'=> 0, 'stotal' => 1, 'name' => toMonthName($mn),);
+		$query[$qi]['columns'][$c++] = array('align'=>1, 'sort'=>0, 'ops'=> 'nf', 'link'=> 0, 'stotal' => 1, 'name' => toMonthName($mn).'-Bncd','style'=>'background-color:#ecf6fc');
+	}
+
+	//index == 19
+	$c =0;$qi = 19;
+	$m_in_fy = (date('n') <= 3 ? 9+date('n') : date('n')-3);
+
+	$q = "SELECT tcase(s.centre) as centre, tcase(s.salesmannm) as exec, COUNT(rcptid) AS total, SUM(CASE WHEN cbflg = -1 THEN 1 ELSE 0 END) AS Bounced, (SUM(CASE WHEN cbflg = -1 THEN 1 ELSE 0 END)/COUNT(rcptid)*100) AS Per ";
+
+	for($i = 1; $i <= $m_in_fy; $i++){
+		$mn = ($i+3)%12; $startdt = date("Y-$mn-01"); $enddt = date("Y-$mn-t");
+		$q .= "
+		,SUM(CASE WHEN rcptdt BETWEEN '$startdt' AND '$enddt' THEN 1 ELSE 0 END) AS '$mn-t', SUM(CASE WHEN cbflg = -1 AND rcptdt BETWEEN '$startdt' AND '$enddt' THEN 1 ELSE 0 END) AS '$mn-b'";
+	}
+	$q .= " FROM $dbPrefix.tbmdeal d join $dbPrefix.tbadealsalesman sa on d.dealid = sa.dealid
+			JOIN $dbPrefix.tbmsalesman s ON s.salesmanid = sa.salesmanid
+			JOIN $dbPrefix_curr.tbxdealrcpt r ON d.dealid = r.dealid :hpdt WHERE cclflg = 0 AND (rcptpaymode = 2 OR rcptpaymode = 6)
+		GROUP BY s.centre, s.salesmanid ";
+
+	$query[$qi] = array(
+		'title'=> 'Bouncing Report - Sales Executive Wise',
+		'default_sort' => 'per',
+		'default_sort_type' => 'desc',
+		'filters' => array('hpdt'),
+		'alternate' => array( array(17, 'Show Daywise'),array(18, 'Show Centewise')),
+		'row_limit' => 250,
+		'q' => $q,
+		'columns' => array(
+			$c++ => array('align'=>-1, 'sort'=>0, 'ops'=> NULL, 'link'=> 0, 'stotal' => 2, 'name' => 'Centre',),
+			$c++ => array('align'=>-1, 'sort'=>0, 'ops'=> NULL, 'link'=> 0, 'stotal' => 2, 'name' => 'Sales Exec',),
+			$c++ => array('align'=>1, 'sort'=>1, 'ops'=> 'nf', 'link'=> 0, 'stotal' => 1, 'name' => 'Deposit',),
+			$c++ => array('align'=>1, 'sort'=>1, 'ops'=> 'nf', 'link'=> 0, 'stotal' => 1, 'name' => 'Bounced',),
+			$c++ => array('align'=>1, 'sort'=>1, 'ops'=> 'nf', 'link'=> 0, 'stotal' => 0, 'name' => '%', 'suffix'=>'%'),
+		),
+	);
+
+	for($i=1; $i <= $m_in_fy; $i++){
+		$mn = ($i+3)%12;
+		$query[$qi]['columns'][$c++] = array('align'=>1, 'sort'=>0, 'ops'=> 'nf', 'link'=> 0, 'stotal' => 1, 'name' => toMonthName($mn),);
+		$query[$qi]['columns'][$c++] = array('align'=>1, 'sort'=>0, 'ops'=> 'nf', 'link'=> 0, 'stotal' => 1, 'name' => toMonthName($mn).'-Bncd','style'=>'background-color:#ecf6fc');
+	}
+
+	//index == 20
+	$c =0;$qi = 20;
+	$query[$qi] = array(
+		'title'=> 'Non-Starter Cases',
+		'default_sort' => 'hpdt',
+		'default_sort_type' => 'asc',
+		'filters' => array('hpdt', 'centre'),
+		'row_limit' => 200,
+		'q' => "SELECT SQL_CALC_FOUND_ROWS d.dealno, tcase(d.dealnm) as name, d.hpdt, tcase(d.centre) as centre, d.hpexpdt, d.rgid, d.model, tcase(s.salesmannm) as sexc, tcase(b.brkrnm) as rexe, p.rcptamt FROM $dbPrefix_curr.tbxfieldrcvry d LEFT JOIN
+			(SELECT rc.dealid, SUM(rc.rcptamt) AS rcptamt FROM (
+				SELECT '200809', r.dealid, SUM(r.totrcptamt) AS rcptamt FROM lksa200809.tbxdealrcpt r WHERE r.cclflg = 0 AND r.CBflg = 0 GROUP BY r.dealid
+				UNION
+				SELECT '200910', r.dealid, SUM(r.totrcptamt) AS rcptamt FROM lksa200910.tbxdealrcpt r WHERE r.cclflg = 0 AND r.CBflg = 0 GROUP BY r.dealid
+				UNION
+				SELECT '201011', r.dealid, SUM(r.totrcptamt) AS rcptamt FROM lksa201011.tbxdealrcpt r WHERE r.cclflg = 0 AND r.CBflg = 0 GROUP BY r.dealid
+				UNION
+				SELECT '201112', r.dealid, SUM(r.totrcptamt) AS rcptamt FROM lksa201112.tbxdealrcpt r WHERE r.cclflg = 0 AND r.CBflg = 0 GROUP BY r.dealid
+				UNION
+				SELECT '201213', r.dealid, SUM(r.totrcptamt) AS rcptamt FROM lksa201213.tbxdealrcpt r WHERE r.cclflg = 0 AND r.CBflg = 0 GROUP BY r.dealid
+				UNION
+				SELECT '201314', r.dealid, SUM(r.totrcptamt) AS rcptamt FROM lksa201314.tbxdealrcpt r WHERE r.cclflg = 0 AND r.CBflg = 0 GROUP BY r.dealid
+				UNION
+				SELECT '201415', r.dealid, SUM(r.totrcptamt) AS rcptamt FROM lksa201415.tbxdealrcpt r WHERE r.cclflg = 0 AND r.CBflg = 0 GROUP BY r.dealid
+				UNION
+				SELECT '201516', r.dealid, SUM(r.totrcptamt) AS rcptamt FROM lksa201516.tbxdealrcpt r WHERE r.cclflg = 0 AND r.CBflg = 0 GROUP BY r.dealid
+				) AS rc GROUP BY rc.dealid
+			) p
+			ON d.dealid = p.dealid
+			JOIN $dbPrefix.tbmsalesman s on d.salesmanid = s.salesmanid
+			LEFT JOIN $dbPrefix.tbmbroker b on d.sraid = b.brkrid
+			WHERE mm= ".date('n')." :hpdt :centre HAVING p.rcptamt IS NULL",
+		'columns' => array(
+			$c++ => array('align'=>1, 'sort'=>1, 'ops'=> NULL, 'link'=> 1, 'stotal' => 0, 'name' => 'Deal No',),
+			$c++ => array('align'=>-1, 'sort'=>1, 'ops'=> NULL, 'link'=> 1, 'stotal' => 2, 'name' => 'Customer Name',),
+			$c++ => array('align'=>1, 'sort'=>1, 'ops'=> 'df', 'link'=> 0, 'stotal' => 0, 'name' => 'HP Date',),
+			$c++ => array('align'=>-1, 'sort'=>1, 'ops'=> NULL, 'link'=> 0, 'stotal' => 0, 'name' => 'Centre',),
+			$c++ => array('align'=>1, 'sort'=>1, 'ops'=> 'df', 'link'=> 0, 'stotal' => 0, 'name' => 'Expriy',),
+			$c++ => array('align'=>1, 'sort'=>1, 'ops'=> NULL, 'link'=> 0, 'stotal' => 1, 'name' => 'Bucket',),
+			$c++ => array('align'=>-1, 'sort'=>1, 'ops'=> NULL, 'link'=> 0, 'stotal' => 0, 'name' => 'Model',),
+			$c++ => array('align'=>-1, 'sort'=>1, 'ops'=> NULL, 'link'=> 0, 'stotal' => 0, 'name' => 'Sales Exe',),
+			$c++ => array('align'=>-1, 'sort'=>1, 'ops'=> NULL, 'link'=> 0, 'stotal' => 0, 'name' => 'Assigned To',),
+			$c++ => array('align'=>1, 'sort'=>1, 'ops'=> 'nf', 'link'=> 0, 'stotal' => 1, 'name' => 'Receipt Amt',),
+		),
+	);
+
+
+
 	/**************************** Controller Starts Here **************************************/
 	$c=0;
 	if($index >= count($query)){
@@ -941,6 +1100,11 @@ function generic(){
 							<h3><?=$query[$index]['title']?></h3>
 						</td>
 						<td nowrap="nowrap">
+							<?if(isset($query[$index]['alternate'])){
+								foreach($query[$index]['alternate'] as $f){?>
+									<a class='alternate' href='?task=generic&index=<?=$f[0]?>'><?=$f[1]?></a>
+								<?}
+							}?>
 							<?foreach($query[$index]['filters'] as $f){?>
 							<b><?=$filters[$f]['title']?></b>
                             <select name="<?=$f?>" id="<?=$f?>" class="inputbox" size="1" onchange="refresh();">
