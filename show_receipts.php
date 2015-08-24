@@ -15,21 +15,11 @@ function show_receipts(){
 		$dealid = executeSingleSelect($q);
 	}
 
-	$q = "
-		SELECT DATE_FORMAT(t1.rcptdt, '%d-%m-%Y') as Date, round(sum(t2.rcptamt)) as Received, t1.rcptid, t1.CBFlg, t1.CBCCLFlg, t1.CCLflg, DATE_FORMAT(t1.cbdt, '%d-%m-%Y') as cbdt, DATE_FORMAT(t1.ccldt, '%d-%m-%Y') as  ccldt, DATE_FORMAT(t1.cbccldt, '%d-%m-%Y') as cbccldt, t1.rmrk as Remarks,
-	sum(case when dctyp = 101 then round(t2.rcptamt) ELSE 0 END) as EMI,
-	sum(case when dctyp = 102 then round(t2.rcptamt) ELSE 0 END) as Clearing,
-	sum(case when dctyp = 103 then round(t2.rcptamt) ELSE 0 END) as CB,
-	sum(case when dctyp = 104 then round(t2.rcptamt) ELSE 0 END) as Penalty,
-	sum(case when dctyp = 105 then round(t2.rcptamt) ELSE 0 END) as Seizing,
-	sum(case when dctyp = 107 then round(t2.rcptamt) ELSE 0 END) as Other,
-	sum(case when dctyp = 111 then round(t2.rcptamt) ELSE 0 END) as CC
-	FROM lksa200809.tbxdealrcpt t1 join lksa200809.tbxdealrcptdtl t2 on t1.rcptid = t2.rcptid and t1.dealid = $dealid group by t1.rcptid";
+	$q = "";
 
-	for ($d =2008+1; $d <= date('Y'); $d++){
+	for ($d =2008; $d <= date('Y'); $d++){
 		$q .="
-		UNION
-		SELECT DATE_FORMAT(t1.rcptdt, '%d-%m-%Y') as Date, round(sum(t2.rcptamt)) as Received, t1.rcptid, t1.CBFlg, t1.CBCCLFlg, t1.CCLflg, DATE_FORMAT(t1.cbdt, '%d-%m-%Y') as cbdt, DATE_FORMAT(t1.ccldt, '%d-%m-%Y') as  ccldt, DATE_FORMAT(t1.cbccldt, '%d-%m-%Y') as cbccldt, t1.rmrk as Remarks,
+		SELECT DATE_FORMAT(t1.rcptdt, '%d-%m-%Y') as Date, round(sum(t2.rcptamt)) as Received, t1.rcptid, t1.CBFlg, t1.CBCCLFlg, t1.CCLflg, t1.rcptpaymode, DATE_FORMAT(t1.cbdt, '%d-%m-%Y') as cbdt, DATE_FORMAT(t1.ccldt, '%d-%m-%Y') as  ccldt, DATE_FORMAT(t1.cbccldt, '%d-%m-%Y') as cbccldt, t1.rmrk as Remarks,
 	sum(case when dctyp = 101 then round(t2.rcptamt) ELSE 0 END) as EMI,
 	sum(case when dctyp = 102 then round(t2.rcptamt) ELSE 0 END) as Clearing,
 	sum(case when dctyp = 103 then round(t2.rcptamt) ELSE 0 END) as CB,
@@ -37,8 +27,10 @@ function show_receipts(){
 	sum(case when dctyp = 105 then round(t2.rcptamt) ELSE 0 END) as Seizing,
 	sum(case when dctyp = 107 then round(t2.rcptamt) ELSE 0 END) as Other,
 	sum(case when dctyp = 111 then round(t2.rcptamt) ELSE 0 END) as CC
-	FROM lksa".$d."".str_pad($d+1-2000, 2, '0', STR_PAD_LEFT).".tbxdealrcpt t1 join lksa".$d."".str_pad($d+1-2000, 2, '0', STR_PAD_LEFT).".tbxdealrcptdtl t2 on t1.rcptid = t2.rcptid and t1.dealid = $dealid  group by t1.rcptid";
+	FROM lksa".$d."".str_pad($d+1-2000, 2, '0', STR_PAD_LEFT).".tbxdealrcpt t1 join lksa".$d."".str_pad($d+1-2000, 2, '0', STR_PAD_LEFT).".tbxdealrcptdtl t2 on t1.rcptid = t2.rcptid and t1.dealid = $dealid  group by t1.rcptid
+	UNION";
 	}
+	$q = rtrim($q, "UNION");
 
 	$i=1;
 
@@ -75,6 +67,7 @@ function show_receipts(){
                     <th class="textright">Penalty</th>
                     <th class="textright">Seizing</th>
                     <th class="textright">Other</th>
+                    <th class="textright">Pay Mode</th>
                     <th class="textright">Remarks</th>
 				</tr>
 			</thead>
@@ -104,6 +97,7 @@ function show_receipts(){
                     <td class="textright"><?=nf($deal['Penalty'])?></td>
                     <td class="textright"><?=nf($deal['Seizing'])?></td>
                     <td class="textright"><?=nf($deal['Other'])?></td>
+                    <td class="textright"><?=$deal['rcptpaymode']?></td>
                     <td class="textleft"><?=$deal['Remarks']?></td>
 				</tr>
 				<?
@@ -133,6 +127,7 @@ function show_receipts(){
                     <th class="textright"><?=nf($total['Penalty'])?></th>
                     <th class="textright"><?=nf($total['Seizing'])?></th>
                     <th class="textright"><?=nf($total['Other'])?></th>
+                    <th class="textleft"></th>
                     <th class="textleft"></th>
 				</tr>
 			</tfoot>

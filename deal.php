@@ -63,7 +63,7 @@ function deal(){
 	$dbPrefix_curr = "lksa".($mm < 4 ? ($yy - 1)."".substr($yy,-2) : $yy."".(substr($yy,-2)+1));
 	$dbPrefix_last = "lksa".($mm < 4 ? ($yy - 1)."".substr($yy-1,-2) : ($yy-1)."".(substr($yy-1,-2)+1));
 
-	$q1 = "SELECT d.dealid, d.dealno,dealnm,d.city, d.state, d.centre, d.AnnualIncome, d.ProposalNo, d.refdealid, d.mobile, d.mobile2, concat(d.add1, ' ', d.add2, ' ', d.area, ' ', d.tahasil) as address, DATE_FORMAT(d.hpexpdt, '%d-%b-%y') as hpexpdt, round(d.financeamt) as finance, round(d.roi,2) as roi, round(d.bankroi,2) as bankroi, round(d.totdueamt) as due, d.extracharges, round(d.collectionchrgs) as cc,  d.period, d.dealsts, DATE_FORMAT(d.bankduedt, '%d-%b-%y') as bankduedt, DATE_FORMAT(date_add(d.bankduedt, INTERVAL period-1 Month), '%d-%b-%y') as bankexpdt, DATE_FORMAT(d.HPDt, '%d-%b-%y') as hpdate, DATE_FORMAT(d.StartDueDt,'%d-%b-%y') as startdt, d.profession, d.annualincome, round(d.CostOfVhcl) as cost, round(d.Marginmoney) as margin, round(d.Marginmoney/d.CostofVhcl*100,1) as permargin, d.active, d.closedealflg, d.closedealfinalflg, d.cancleflg, b.banknm as bank, br.bankbrnchnm as branch, brk.brkrnm as dealer
+	$q1 = "SELECT d.dealid, d.dealno,dealnm,d.city, d.state, d.centre, d.AnnualIncome, d.ProposalNo, d.refdealid, d.mobile, d.mobile2, DATE_FORMAT(d.closedt,'%d-%b-%y') as closedt, concat(d.add1, ' ', d.add2, ' ', d.area, ' ', d.tahasil) as address, DATE_FORMAT(d.hpexpdt, '%d-%b-%y') as hpexpdt, round(d.financeamt) as finance, round(d.roi,2) as roi, round(d.bankroi,2) as bankroi, round(d.totdueamt) as due, d.extracharges, round(d.collectionchrgs) as cc,  d.period, d.dealsts, DATE_FORMAT(d.bankduedt, '%d-%b-%y') as bankduedt, DATE_FORMAT(date_add(d.bankduedt, INTERVAL period-1 Month), '%d-%b-%y') as bankexpdt, DATE_FORMAT(d.HPDt, '%d-%b-%y') as hpdate, DATE_FORMAT(d.StartDueDt,'%d-%b-%y') as startdt, d.profession, d.annualincome, round(d.CostOfVhcl) as cost, round(d.Marginmoney) as margin, round(d.Marginmoney/d.CostofVhcl*100,1) as permargin, d.active, d.closedealflg, d.closedealfinalflg, d.cancleflg, b.banknm as bank, br.bankbrnchnm as branch, brk.brkrnm as dealer
 	FROM ".$dbPrefix.".tbmdeal d join lksa.tbmsourcebankbrnch br join lksa.tbmsourcebank b join lksa.tbmbroker brk
 	on d.bankbrnchid = br.bankbrnchid and br.bankid = b.bankid and d.brkrid = brk.brkrid
 	WHERE dealid = '$dealid'";
@@ -109,7 +109,12 @@ function deal(){
 	UNION
 		Select 'NACH' as type, nacamt as amt, apprvflg as approved, approverejectdt as dt, pdcrcvd from lksa.tbmdealnac where dealid =  $dealid";
 
-	$q9 ="SELECT n1.acxndt AS paidtobank, n2.nocdate as nocrcptdt, n2.nocno, n3.nocdate AS senttocustomerdt, n3.rtndate AS returndt, n3.rtnremark, n3.sraid, n3.senddate as senttosradt FROM tbadealnocpmnt n1 LEFT JOIN tbadealnoc n2  ON n1.dealid = n2.dealid LEFT JOIN tbadealcustnoc AS n3 ON n1.dealid = n3.dealid WHERE n1.dealid =$dealid";
+	$q9 ="SELECT n1.acxndt AS paidtobank, n2.nocdate as nocrcptdt, n2.nocno, n3.nocdate AS senttocustomerdt, n3.rtndate AS returndt, n3.rtnremark, n3.sraid, n3.senddate as senttosradt, b.brkrnm as sra
+	FROM tbadealnocpmnt n1
+	LEFT JOIN tbadealnoc n2 ON n1.dealid = n2.dealid and n2.dealid = $dealid
+	LEFT JOIN tbadealcustnoc AS n3 ON n1.dealid = n3.dealid and n3.dealid = $dealid
+	LEFT JOIN lksa.tbmbroker b ON n3.sraid = b.brkrid
+	WHERE n1.dealid = $dealid";
 
 	$q10 = "SELECT a.dealid FROM `tbadealcatagory` AS a JOIN `tbmrcvrycatagory` AS b ON a.CatgId=b.pkid AND b.PkId=12 and a.dealid = $dealid";
 
@@ -199,8 +204,10 @@ function deal(){
 		$status .=  "red'> Closed";
 	else if($deal['dealsts']==2)
 		$status .=  "gold'> Draft";
+
 	if($deal['cancleflg']== -1)
-		$status .= "red'> Cancelled";
+		$status = "<span style='color:red'> Cancelled";
+
 	$status .= "</span>";
 	?>
 	<div class="PageHeader"><a target="_blank" href="http://in.loksuvidha.com/Loans/Deal/Details/<?=$deal['dealid']?>"><?=$deal['dealnm']?></a></div>
@@ -393,6 +400,13 @@ function deal(){
 					<td class="keys" valign="top"><label class="textsts">HP & Expiry Date</label></td>
 					<td><b><?=$deal['hpdate']?></b> to <b><?=$deal['hpexpdt']?></b></td>
 				</tr>
+				<?if($deal['dealsts'] == 3){?>
+					<tr>
+						<td class="keys" valign="top"><label class="textsts">Close Date</label></td>
+						<td><b class='red'><?=$deal['closedt']?></b></td>
+					</tr>
+				<?}?>
+
 			</tbody></table>
 	</fieldset>
 
@@ -450,39 +464,31 @@ function deal(){
 		<table class="admintable" width="100%" cellspacing="1">
 			<tbody>
 				<?if(isset($noc)){?>
-				<tr>
-					<td class="keys" valign="top"><label class="textsts">Payment to Bank</label></td>
-					<td><?=date('d-M-Y',strtotime($noc['paidtobank']))?></td>
-				</tr>
-					<?if(!is_null($noc['nocrcptdt'])){?>
+					<tr>
+						<td class="keys" valign="top"><label class="textsts">Last Payment to Bank</label></td>
+						<td><?=date('d-M-Y',strtotime($noc['paidtobank']))?></td>
+					</tr>
 					<tr>
 						<td class="keys" valign="top"><label class="textsts">NOC Received</label></td>
-						<td><?=date('d-M-Y',strtotime($noc['nocrcptdt']))?></td>
+						<td><?=(!is_null($noc['nocrcptdt']) ? df($noc['nocrcptdt']) : 'No')?></td>
 					</tr>
 					<tr>
 						<td class="keys" valign="top"><label class="textsts">NOC No</label></td>
-						<td><?=$noc['nocno']?></td>
+						<td><?=(is_null($noc['nocno']) ? '-' : $noc['nocno'])?></td>
 					</tr>
 
-						<?if(!is_null($noc['senttocustomerdt'])){?>
+					<tr>
+						<td class="keys" valign="top"><label class="textsts">Sent to Customer:</label></td>
+						<td><?=(!is_null($noc['senttocustomerdt']) ? df($noc['senttocustomerdt']) : 'No')?></td>
+					</tr>
 						<tr>
-							<td class="keys" valign="top"><label class="textsts">Sent to Customer:</label></td>
-							<td><?=date('d-M-Y',strtotime($noc['senttocustomerdt']))?></td>
+							<td class="keys" valign="top"><label class="textsts">Returned from Customer:</label></td>
+							<td><?=(!is_null($noc['returndt']) ? df($noc['returndt']) : 'No')?> <?=$noc['rtnremark']?></td>
 						</tr>
-							<?if(!is_null($noc['returndt'])){?>
-							<tr>
-								<td class="keys" valign="top"><label class="textsts">Returned from Customer:</label></td>
-								<td><?=date('d-M-Y',strtotime($noc['returndt']))?> - <?=$noc['rtnremark']?></td>
-							</tr>
-							<?}?>
-							<?if($noc['sraid']!=0){?>
-							<tr>
-								<td class="keys" valign="top"><label class="textsts">Send to SRA:</label></td>
-								<td><?=date('d-M-Y',strtotime($noc['returndt']))?> - <?=$noc['rtnremark']?></td>
-							</tr>
-							<?}?>
-						<?}?>
-					<?}?>
+						<tr>
+							<td class="keys" valign="top"><label class="textsts">Send to SRA:</label></td>
+							<td><?=($noc['sraid']!=0 ? $noc['sra'].' ('.df($noc['senttosradt']).')' : 'No')?></td>
+						</tr>
 				<?}else{?>
 					<tr>
 						<td class="keys" valign="top"><label class="textsts">NOC Status</label></td>

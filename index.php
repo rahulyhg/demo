@@ -24,6 +24,7 @@ switch($task){
 
 	case "se_report":
 	case "dl_report";
+	case "lastpayment":
 
 	case "od_report":
     case "per_field":

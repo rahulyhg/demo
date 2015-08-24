@@ -20,7 +20,7 @@ function deallist(){
 		$last_fy = date('y',  strtotime('-1 year'))."-".date('y');
 	}
 
-    $search = isset($_REQUEST['search']) ? $_REQUEST['search'] : "";
+    $search = isset($_REQUEST['search']) ? trim($_REQUEST['search']) : "";
 
     $centre = isset($_REQUEST['centre']) ? $_REQUEST['centre'] : "";
     $status = isset($_REQUEST['status']) ? $_REQUEST['status'] : 0;
@@ -93,7 +93,7 @@ function deallist(){
 			$q .= " AND (d.dealno = '$search')";
 		}
 		else
-			$q .= " AND (d.dealnm like '%$search%')";
+			$q .= " AND (d.dealnm like '%$search%' or d.add1 like '%$search%' or d.add2 like '%$search%' or d.area like '%$search%')";
     }
     else {
 		$q .= $period_options[$period][1];

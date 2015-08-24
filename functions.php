@@ -82,6 +82,7 @@ function df($dt){
 }
 
 function toMonthName($monthNum){
+	if(is_null($monthNum)) return 'No Month';
 	return date('F', mktime(0, 0, 0, $monthNum, 10));
 }
 
@@ -241,7 +242,11 @@ function printHeader($title = 'Loksuvidha Reports', $menu='Y'){
 						<ul style="width: 144px;">
 							<li style="width: 144px;"><a class="icon-16-cpanel" href="index.php?task=deallist">Deal List</a></li>
 							<li class="separator" style="width: 144px;"><span></span></li>
-							<li style="width: 144px;"><a class="icon-16-user" href="index.php?task=deal&dealid=">Deal</a></li>
+							<li style="width: 144px;"><a class="icon-16-user" href="index.php?task=generic&index=12">NOC Reoort</a></li>
+							<li style="width: 144px;"><a class="icon-16-user" href="index.php?task=generic&index=13">Bank Posting</a></li>
+							<li class="separator" style="width: 144px;"><span></span></li>
+							<li style="width: 144px;"><a class="icon-16-user" href="index.php?task=generic&index=16">Seized Vehicles</a></li>
+							<li class="separator" style="width: 144px;"><span></span></li>
 							<li style="width: 144px;"><a class="icon-16-user" href="index.php?task=dashboard">Dashboard</a></li>
 						</ul>
 					</li>
@@ -253,6 +258,7 @@ function printHeader($title = 'Loksuvidha Reports', $menu='Y'){
 							<li style="width: 118px;"><a class="icon-16-trash" href="index.php?task=generic&index=10">Pending Vehicles</a></li>
 							<li class="separator" style="width: 144px;"><span></span></li>
 							<li style="width: 118px;"><a class="icon-16-trash" href="index.php?task=generic&index=0">Pay Instruments</a></li>
+							<li style="width: 118px;"><a class="icon-16-trash" href="index.php?task=generic&index=11">Due List Report</a></li>
 						</ul>
 					</li>
 					<li class="node "><a>Recovery</a>
@@ -273,6 +279,8 @@ function printHeader($title = 'Loksuvidha Reports', $menu='Y'){
 							<li style="width: 144px;"><a class="icon-16-trash" href="index.php?task=generic&index=3">SRA Tag Summary</a></li>
 							<li class="separator" style="width: 144px;"><span></span></li>
 							<li style="width: 144px;"><a class="icon-16-trash" href="index.php?task=generic&index=8">Cash Collection</a></li>
+							<li style="width: 144px;"><a class="icon-16-trash" href="index.php?task=generic&index=15">Regular Recovery</a></li>
+							<li style="width: 144px;"><a class="icon-16-trash" href="index.php?task=lastpayment">Last Payment</a></li>
 						</ul>
 					</li>
 				</ul>
@@ -475,6 +483,9 @@ table{border: 1px solid #eee;border-width: 0px 0px 1px 1px;border-collapse: coll
 table#summary{width:100%;}
 table td.filler{width:10%;}
 table.tbucket td{border: 1px solid #eee;border-width: 1px 1px 0px 0px;padding:10px 12px;width:16%;text-align: center;font-weight:bold}
+table.tcommission {margin:3px;}
+table.tcommission thead, table.tcommission tfoot{background-color:#EEE0E5; font-weight:bold}
+table.tcommission td{border: 1px solid #ccc;padding:5px 12px;width:16%;text-align:center;}
 tr.ass{background-color:#FFC1C1;}
 tr.ass td{padding:5px 10px;}
 tr.rec{font-size:20px;background-color:#C1FFC1;}
@@ -532,14 +543,19 @@ tr.headers{font-size:12px;}
 .dashboard{padding:5px 2px 5px 2px;}
 .dashboard .half{font-weight:bold;text-align:center;}
 .dashboard .tag{margin:2px 2px -2px 2px;padding:3px;border:1px solid #ccc;color:#8B5A2B;font-weight:bold;border-bottom:0px;/* float:left;*/}
-.dashboard .committed{font-weight: bold;background-color: #777;/*#8B5A00;*/padding: 4px;margin: -1px 2px;color: #fff;text-align: center;}
+.dashboard .committed, .dashboard .collection{font-weight: bold;background-color: #777;/*#8B5A00;*/padding: 4px;margin: -1px 2px;color: #fff;text-align: center;}
 .dashboard #collection .committed{background-color:#458B74;}
+.dashboard #collection .collection{background-color:green;}
 .dashboard .number{padding:10px;font-size:24px;}
 .dashboard #collection .number{margin:0 2px;border:1px solid #ccc; text-align:center;font-size:18px;padding:7px;}
 .dashboard .recovered, .dashboard .assigned{border:1px solid #ccc;/*float:left;*/ margin:0px 2px;min-width:20%;}
 .dashboard .recovered .title{color:#fff;background-color:green;padding:3px;}
 .dashboard .assigned .title{color:#fff;background-color:red;padding:3px;}
 .bh{float:left;margin:36px 2px;background-color:red;color:#fff;text-align:centre;font-size:30px}
+.dashboard .alert{font-weight: bold;background-color:#fffacc;padding: 7px;margin: -1px 2px;color: red;text-align: center;border:1px solid #ddd;border-radius:10px;margin:0px 2px 2px 2px;}
+.dashboard .commission{font-weight: bold;background-color:brown;padding: 7px;margin: -1px 2px;color:#fff;text-align: center;border-radius:10px;margin:0px 2px 2px 2px;}
+.dashboard .commission a{color:#fff;}
+
 .dealstatus{background-color:#fff;padding:1px 1px 1px 2px;}
 .dealstsitem{/*border:1px solid #ccc;margin:2px 0px;*/}
 .dealstsitem.today{background-color: #F4A460;border-bottom:1px solid #ccc;colr: #fff;font-weight:bold;}
@@ -612,9 +628,15 @@ function printMobileJS(){?>
 		j_query("#content").empty().html('<center>&nbsp;<br><img src="<?=$_SESSION['LKS_ROOT']?>/images/ajax-loader2.gif" style="border:none;" /><br>&nbsp;</center>');
 		window.location.assign("index.php?task=dashboard");
 	}
-	function callDealList(type, dd, bucket){
+	function callCommission(){
+		j_query("#content").empty().html('<center>&nbsp;<br><img src="<?=$_SESSION['LKS_ROOT']?>/images/ajax-loader2.gif" style="border:none;" /><br>&nbsp;</center>');
+		window.location.assign("index.php?task=commission");
+	}
+	function callDealList(type, dd, bucket,yr){
 		if(typeof dd !== 'undefined') ; else if(ge('dd')) dd = ge('dd').value; else dd=0;
 		if(typeof bucket !== 'undefined') ;	else if(ge('bucket'))bucket = ge('bucket').value; else bucket = -1;
+		if(typeof yr !== 'undefined') ;	else if(ge('yr')) yr = ge('yr').value; else yr = '';
+
 		if(ge('search')) search = ge('search').value; else search = '';
 		if(ge('sval')) 	sval = ge('sval').value; else sval = 'pkid';
 		if(ge('stype')) 	stype = ge('stype').value; else stype = 'desc';
@@ -622,7 +644,7 @@ function printMobileJS(){?>
 		if(ge('page'))	page = ge('page').value; else page =1;
 
 		j_query("#content").empty().html('<center>&nbsp;<br><img src="<?=$_SESSION['LKS_ROOT']?>/images/ajax-loader2.gif" style="border:none;" /><br>&nbsp;</center>');
-		var url = btoa("type=" + type + "&bucket=" + bucket + "&dd="+ dd + "&search=" + search +"&page=" + page + "&limit=" + limit +"&sval=" + sval + "&stype=" + stype);
+		var url = btoa("type=" + type + "&bucket=" + bucket + "&dd="+ dd + "&yr=" + yr + "&search=" + search +"&page=" + page + "&limit=" + limit +"&sval=" + sval + "&stype=" + stype);
 		window.location.assign("index.php?task=deallist&url="+url);
 	}
 <?

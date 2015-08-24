@@ -112,6 +112,7 @@ function per_field(){
    	}
 
   	$hp_options []  = array("Year: ".date('Y'), " AND year(d.hpdt)=".$currYear."");
+  	$hp_options []  = array("Year: ".(date('Y')-1), " AND year(d.hpdt)=".($currYear-1)."");
 	for($i = date('Y'); $i >= 2008; $i--){
 		$fy = substr($i,-2)."-".substr($i+1,-2);
 		$hp_options[] = array("FY $fy", " AND  d.fy = '$fy' ");
