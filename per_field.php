@@ -47,6 +47,7 @@ function per_field(){
 	$bucket = isset($_REQUEST['bucket']) ? $_REQUEST['bucket'] : -1;
 	$dd = isset($_REQUEST['dd']) ? $_REQUEST['dd'] : -1;
 	$compare = isset($_REQUEST['compare']) ? $_REQUEST['compare'] : 1;
+	$active = isset($_REQUEST['active']) ? $_REQUEST['active'] : 0;
 	$expired = isset($_REQUEST['expired']) ? $_REQUEST['expired'] : 0;
 	$callertag = isset($_REQUEST['callertag']) ? $_REQUEST['callertag'] : 0;
 	$sratag = isset($_REQUEST['sratag']) ? $_REQUEST['sratag'] : 0;
@@ -96,16 +97,16 @@ function per_field(){
    		array(date('Y-M',strtotime('-2 month', strtotime($fd))), date('m',strtotime('-2 month', strtotime($fd))), date('Y', strtotime('-2 month', strtotime($fd)))),
 		array(date('Y-M',strtotime('-3 month', strtotime($fd))), date('m',strtotime('-3 month', strtotime($fd))), date('Y', strtotime('-3 month', strtotime($fd)))),
 		array(date('Y-M',strtotime('-4 month', strtotime($fd))), date('m',strtotime('-4 month', strtotime($fd))), date('Y', strtotime('-4 month', strtotime($fd)))),
-/*		array(date('Y-M',strtotime('-5 month', strtotime($fd))), date('m',strtotime('-5 month', strtotime($fd))), date('Y', strtotime('-5 month', strtotime($fd)))),
-   		array(date('Y-M',strtotime('-6 month', strtotime($fd))), date('m',strtotime('-6 month', strtotime($fd))), date('Y', strtotime('-6 month', strtotime($fd))))
+		array(date('Y-M',strtotime('-5 month', strtotime($fd))), date('m',strtotime('-5 month', strtotime($fd))), date('Y', strtotime('-5 month', strtotime($fd)))),
+/*   		array(date('Y-M',strtotime('-6 month', strtotime($fd))), date('m',strtotime('-6 month', strtotime($fd))), date('Y', strtotime('-6 month', strtotime($fd))))
 */
    	);
 	$mm = $ason_options[$ason][1]; $yy = $ason_options[$ason][2];
 	$dbPrefix_curr = "lksa".($mm < 4 ? ($yy - 1)."".substr($yy,-2) : $yy."".(substr($yy,-2)+1));
 
 	$hp_options = array(array("- HP Date -",""));
-	$hp_options[] = array("Fresh Bouncing", " AND d.hpdt > '2014-03-31' ");
-	$hp_options[] = array("Old", " AND d.hpdt < '2014-04-01'");
+	$hp_options[] = array("Fresh Bouncing", " AND d.hpdt > '2013-12-31' ");
+	$hp_options[] = array("Old", " AND d.hpdt < '2014-01-01'");
 
 	for($z=1; $z<=6; $z++){
    		$hp_options []  = array(date('Y-M',strtotime("-$z month", strtotime($fd))), " AND d.hpdt between '".date('Y-m-01', strtotime("-$z month", strtotime($fd)))."' AND '".date('Y-m-t', strtotime("-$z month", strtotime($fd)))."' ");
@@ -164,6 +165,18 @@ function per_field(){
 					GROUP BY r.dealid having rcptamt >= ".$MIN_RECEIPT_AMT."
 			) AS t ON d.dealid = t.dealid WHERE d.mm = $mm ".$hp_options[$hpdt][1];
 
+			switch($dd){
+				case 0: //Both
+					$q .= "";
+					break;
+				case 1://first day
+					$q .= " and d.dd = 1 ";
+					break;
+				case 2://during
+					$q .= " and d.dd > 1 ";
+					break;
+			}
+
 			switch($expired){
 				case 0://both
 					break;
@@ -208,12 +221,22 @@ function per_field(){
 			break;
 
 		case 2: //Deal Wise
-			$q = " SELECT  SQL_CALC_FOUND_ROWS d.dealid, d.dealid, d.dealno, d.dealnm, d.hpdt, m.hpexpdt, tcase(d.centre) as dealcentre, d.emi,d.sraid,
-			b.brkrnm as sranm, e.realname as callernm, tcase(b.centre) as centre, d.rgid, d.oddueamt, d.catid, d.dd, d.rec_flg, d.rec_sraid, d.rec_total, d.rec_od,
-			d.recstatus_sra, d.rectagid_sra, d.rectagid_caller, st.description as tag_sra, ct.description as tag_caller,
+			$q = " SELECT  SQL_CALC_FOUND_ROWS d.dealid, d.dealid, d.dealno, tcase(d.dealnm) as dealnm, d.hpdt, tbmdeal.hpexpdt, tcase(d.centre) as dealcentre, tcase(d.area) as area, d.emi, d.sraid, tcase(b.brkrnm) as sranm, tcase(e.realname) as callernm, tcase(b.centre) as centre, d.rgid, d.oddueamt, d.catid, d.dd, d.rec_flg, d.rec_sraid, d.rec_total, d.rec_od, d.recstatus_sra, d.rectagid_sra, d.rectagid_caller, st.description as tag_sra, ct.description as tag_caller,
 			t.rc_sraid, t.rc_sranm, t.rcptamt, t.sra_cnt
-			FROM ".$dbPrefix_curr.".tbxfieldrcvry d
-			JOIN ".$dbPrefix.".tbmdeal m on m.dealid = d.dealid
+			FROM ".$dbPrefix.".tbmdeal JOIN ".$dbPrefix_curr.".tbxfieldrcvry d on tbmdeal.dealid = d.dealid and d.mm = $mm ".$hp_options[$hpdt][1]."";
+
+			switch($active){
+				case 0:
+					break;
+				case 1://Active
+					$q .= " AND tbmdeal.dealsts = 1 ";
+					break;
+				case 2://Closed
+					$q .= " AND tbmdeal.dealsts = 3 ";
+					break;
+			}
+
+			$q .= "
 			LEFT JOIN ".$dbPrefix.".tbmbroker b ON d.sraid = b.brkrid AND b.brkrtyp = 2
 			LEFT JOIN ".$user_dbPrefix.".tbmuser e ON d.callerid = e.userid
 			LEFT JOIN ".$dbPrefix.".tbmrecoverytags st ON d.rectagid_sra = st.tagid
@@ -230,7 +253,7 @@ function per_field(){
 						HAVING rcptamt >= ".$MIN_RECEIPT_AMT."
 					) AS t1 JOIN ".$dbPrefix.".tbmbroker b
 					ON t1.sraid = b.brkrid AND b.brkrtyp = 2
-			) AS t ON d.dealid = t.dealid WHERE d.mm = $mm ".$hp_options[$hpdt][1]." ";
+			) AS t ON d.dealid = t.dealid WHERE 1 ";
 
 			if($centre != "")
 				$q .= " AND ".($by == $BY_REC_CENTRE ? 'b.' : 'd.')."centre = '$centre' ";
@@ -363,7 +386,7 @@ function per_field(){
                          	<?}?>
                             </select>
 
-                            <select name="dd" id="dd" class="inputbox" size="1" onchange="call_per_field();" <?=($type != 2 ? 'style="display:none"': '')?>>
+                            <select name="dd" id="dd" class="inputbox" size="1" onchange="call_per_field();">
                             	<option value="0" <? if($dd == 0){?> selected="selected" <? }?>>-Assigned On-</option>
                            		<option value="1" <? if($dd == 1){?> selected="selected" <? }?>>First Day</option>
                             	<option value="2" <? if($dd == 2){?> selected="selected" <? }?>>During Month</option>
@@ -387,6 +410,12 @@ function per_field(){
 								<option value="1" <? if($expired == 1){?> selected="selected" <? }?>>Expired</option>
 								<option value="2" <? if($expired == 2){?> selected="selected" <? }?>>Active</option>
 							</select>
+
+                            <select name="active" id="active" class="inputbox" size="1" onchange="call_per_caller();" <?=($type != 2 ? 'style="display:none"': '')?>>
+                            	<option value="0" <? if($active == 0){?> selected="selected" <? }?>>-Live-</option>
+                           		<option value="1" <? if($active == 1){?> selected="selected" <? }?>>Active</option>
+                            	<option value="2" <? if($active == 2){?> selected="selected" <? }?>>Closed</option>
+                            </select>
 
                             <select name="sraid" id="sraid" class="inputbox" size="1" onchange="call_per_field();" <?=($type == 0 ? 'style="display:none"': '')?>>
 								<optgroup label='- ASSIGNED TO SRA -'>
@@ -487,6 +516,7 @@ function per_field(){
 						<th class="textleft date_column"><a href="javascript:sort('hpdt'); call_per_field();">HP Date</a></th>
 						<th class="textleft date_column"><a href="javascript:sort('hpexpdt'); call_per_field();">Exp Dt</a></th>
 						<th class="textleft"><a href="javascript:sort('centre'); call_per_field();">Deal Centre</a></th>
+						<th class="textleft"><a href="javascript:sort('area'); call_per_field();">Area</a></th>
 						<th class="textleft"><a href="javascript:sort('callernm'); call_per_field();">Caller</a></th>
 						<th class="textleft"><a href="javascript:sort('sranm'); call_per_field();">SRA</a></th>
 						<th class="textleft"><a href="javascript:sort('rc_sranm'); call_per_field();">Recovered By</a></th>
@@ -688,7 +718,7 @@ function per_field(){
 										$color = '';
 										if($deal['catid'] == 25) // Seized Vehicle
 											$color = 'seized';
-										if($deal['catid'] == 12) // Insurance Case
+										else if($deal['catid'] == 12) // Insurance Case
 											$color = 'insurance';
 										else if ($deal['catid'] == 13) // Police Station
 											$color = 'police-station';
@@ -710,9 +740,10 @@ function per_field(){
 										<td class="textleft"><a target="_blank" href='?task=deal&dealid=<?=$deal['dealid']?>'><?=titleCase($deal['dealnm'])?></a></td>
 										<td class="textright"><?=date('d-M-Y',strtotime($deal['hpdt']))?></td>
 										<td class="textright"><?=date('d-M-Y',strtotime($deal['hpexpdt']))?></td>
-										<td class="textleft"><?=titleCase($deal['dealcentre'])?></td>
-										<td class="textleft"><?=titleCase($deal['callernm'])?></td>
-										<td class="textleft"><?=titleCase($deal['sranm'])?></td>
+										<td class="textleft"><?=$deal['dealcentre']?></td>
+										<td class="textleft"><?=$deal['area']?></td>
+										<td class="textleft"><?=$deal['callernm']?></td>
+										<td class="textleft"><?=$deal['sranm']?></td>
 										<?if($deal['rec_flg'] == 0){?>
 											<td class="textleft"><?=titleCase($deal['rc_sranm'])?></td>
 										<?}else{?>
@@ -780,7 +811,7 @@ function per_field(){
 										</a>
 									</th>
 									<th class='textright'>
-										<a href="#" onclick="javascript:ge('type').value=2; ge('dd').value ='0';
+										<a href="#" onclick="javascript:ge('type').value=2;
 										ge('centre').value='<?=($type == 1 ? $centre : '')?>';
 
 										call_per_field(); return false;">
@@ -788,7 +819,7 @@ function per_field(){
 										</a>
 									</th>
 									<th class='textright'>
-										<a href="#" onclick="javascript:ge('type').value=2;ge('dd').value ='0';
+										<a href="#" onclick="javascript:ge('type').value=2;
 										ge('centre').value='<?=($type == 1 ? $centre : '')?>';
 										ge('rc_sraid').value = -1;
 										call_per_field(); return false;">
@@ -800,7 +831,7 @@ function per_field(){
 									</th>
 
 									<th class="textright">
-										<a href="#" onclick="javascript:ge('type').value=2;ge('dd').value ='0';
+										<a href="#" onclick="javascript:ge('type').value=2;
 										ge('centre').value='<?=($type == 1 ? $centre : '')?>';
 										ge('rc_sraid').value = 0;
 										call_per_field(); return false;">
@@ -811,14 +842,14 @@ function per_field(){
 									for($b=1; $b <=$BUCKET_SIZE; $b++){?>
 										<?if($compare == 1){?>
 											<th class="textright">
-												<a href="#" onclick="javascript:ge('type').value=2;ge('dd').value ='0';
+												<a href="#" onclick="javascript:ge('type').value=2;
 												ge('sraid').value=''; ge('centre').value='<?=($type == 1 ? $centre : '')?>';
 												 ge('rc_sraid').value = ''; ge('bucket').value = <?=$b?>; call_per_field(); return false;">
 												<?=nf($total['a'.$b],0)?>
 												</a>
 											</th>
 											<th class="textright">
-												<a href="#" onclick="javascript:ge('type').value=2;ge('dd').value ='0';
+												<a href="#" onclick="javascript:ge('type').value=2;
 												ge('sraid').value=''; ge('centre').value='<?=($type == 1 ? $centre : '')?>';
 												 ge('rc_sraid').value = -1; ge('bucket').value = <?=$b?>; call_per_field(); return false;">
 												<?=nf($total['r'.$b],0)?>
@@ -826,7 +857,7 @@ function per_field(){
 											</th>
 										<?}else{?>
 											<th class="textright">
-												<a href="#" onclick="javascript:ge('type').value=2;ge('dd').value ='0';
+												<a href="#" onclick="javascript:ge('type').value=2;
 												ge('sraid').value=''; ge('centre').value='<?=($type == 1 ? $centre : '')?>';
 												ge('rc_sraid').value = 0; ge('bucket').value = <?=$b?>; call_per_field(); return false;">
 												<?=nf($total['b'.$b],0)?>
@@ -865,6 +896,7 @@ function per_field(){
 									<th class='textright'>&nbsp;</th>
 									<th class='textleft'>&nbsp;</th>
 									<th class='textright'>&nbsp;</th>
+									<th class='textleft'>&nbsp;</th>
 									<th class='textleft'>&nbsp;</th>
 									<th class='textleft'>&nbsp;</th>
 									<th colspan=2 class='textleft'>Total (Shown Rows Only)</th>

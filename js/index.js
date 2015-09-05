@@ -94,11 +94,18 @@ function refresh(){
 	if(ge('city')) 	city = ge('city').value; else city = "";
 	if(ge('status')) 	status = ge('status').value; else status = 0;
 	if(ge('seizestatus')) 	seizestatus = ge('seizestatus').value; else seizestatus = 0;
+	if(ge('seizemm')) 	seizemm = ge('seizemm').value; else seizemm = 0;
+	if(ge('role')) 	role = ge('role').value; else role = 0;
+	if(ge('department')) 	department = ge('department').value; else department = 0;
+
+	if(ge('rec_emi')) 	rec_emi = ge('rec_emi').value; else rec_emi = 0;
+	if(ge('bckt')) 	bckt = ge('bckt').value; else bckt = 0;
 	
 	if(ge('fromdt')) 	fromdt = ge('fromdt').value; else fromdt = "";
 	if(ge('todt')) 	todt = ge('todt').value; else todt = "";
 	if(ge('chduedt')) 	chduedt = ge('chduedt').value; else chduedt = "";
 	if(ge('bouncingstatus')) 	bouncingstatus = ge('bouncingstatus').value; else bouncingstatus = "";
+	if(ge('rcptpaytype')) 	rcptpaytype = ge('rcptpaytype').value; else rcptpaytype = "";
 	if(ge('paytype')) 	paytype = ge('paytype').value; else paytype = "";
 	if(ge('branch')) 	branch = ge('branch').value; else branch = "";
 	if(ge('status')) 	status = ge('status').value; else status = "";
@@ -110,7 +117,7 @@ function refresh(){
 	if(ge('limit')) 	limit = ge('limit').value; else limit = 30;
 	if(ge('page')) page = ge('page').value;
 
-	var url = btoa("hpdt="+ hpdt +"&pt_nac=" + pt_nac +"&pt_ecs=" + pt_ecs +"&pt_pdc=" + pt_pdc + "&pdcind=" + pdcind +"&nacind=" + nacind +"&ecsind=" + ecsind +"&pdcind=" + pdcind +"&bucket=" + bucket + "&branch=" + branch + "&status=" + status +"&bouncingstatus=" + bouncingstatus + "&paytype=" + paytype + "&chduedt=" + chduedt + "&duedt=" + duedt + "&centre=" + centre + "&reccentre=" + reccentre + "&dealer=" + dealer +"&salesman=" + salesman + "&disbursed=" + disbursed +"&salesmanid="+ salesmanid + "&period="+ period  + "&city=" + city + "&status=" + status + "&seizestatus=" + seizestatus + "&fromdt=" + fromdt + "&todt=" + todt + "&mm=" +mm + "&dd=" +dd + "&index=" + index + "&page=" + page + "&limit=" + limit +"&sval=" + sval + "&stype=" + stype);
+	var url = btoa("hpdt="+ hpdt +"&pt_nac=" + pt_nac +"&pt_ecs=" + pt_ecs +"&pt_pdc=" + pt_pdc + "&pdcind=" + pdcind +"&nacind=" + nacind +"&ecsind=" + ecsind +"&pdcind=" + pdcind +"&bucket=" + bucket + "&branch=" + branch + "&status=" + status +"&bouncingstatus=" + bouncingstatus + "&paytype=" + paytype + "&rcptpaytype=" + rcptpaytype + "&chduedt=" + chduedt + "&duedt=" + duedt + "&centre=" + centre + "&reccentre=" + reccentre + "&dealer=" + dealer +"&salesman=" + salesman + "&disbursed=" + disbursed +"&salesmanid="+ salesmanid + "&period="+ period  + "&city=" + city + "&status=" + status + "&seizemm=" + seizemm + "&role=" + role + "&department=" + department + "&seizestatus=" + seizestatus + "&rec_emi=" + rec_emi +"&bckt=" + bckt +"&fromdt=" + fromdt + "&todt=" + todt + "&mm=" +mm + "&dd=" +dd + "&index=" + index + "&page=" + page + "&limit=" + limit +"&sval=" + sval + "&stype=" + stype);
 	j_query("#content-table").empty().html('<center>&nbsp;<br><img src="images/ajax-loader2.gif" style="border:none;" /><br>&nbsp;</center>');
 	window.location.assign("index.php?task=generic&url="+url);
 }
@@ -196,8 +203,16 @@ function callDLReport(){
 	if(ge('brkrid')) 	brkrid = ge('brkrid').value; else brkrid = 0;
 	if(ge('zeroDeals')) 	zeroDeals = ge('zeroDeals').value; else zeroDeals = 0;
 	if(ge('type')) 	type = ge('type').value; else type = 0;
+	if(ge('hpdt'))	hpdt = ge('hpdt').value; else hpdt = 0;
+	if(ge('expired'))	expired = ge('expired').value; else expired = 0;
+
+	if(ge('sval')) 	sval = ge('sval').value; else sval = "";
+	if(ge('stype')) 	stype = ge('stype').value; else stype = 'desc';
+	if(ge('limit')) 	limit = ge('limit').value; else limit = 30;
+	if(ge('page')) page = ge('page').value; else page = 1;
 	
-	var url = btoa("&centre=" + centre + "&brkrid="+ brkrid  + "&zeroDeals=" + zeroDeals + "&type=" + type);
+	var url = btoa("&centre=" + centre + "&brkrid="+ brkrid  + "&zeroDeals=" + zeroDeals + "&type=" + type + "&hpdt=" + hpdt + "&expired=" +expired
+	+ "&page=" + page + "&limit=" + limit +"&sval=" + sval + "&stype=" + stype);
 	j_query("#content-table").empty().html('<center>&nbsp;<br><img src="images/ajax-loader2.gif" style="border:none;" /><br>&nbsp;</center>');
 	window.location.assign("index.php?task=dl_report&url="+url);
 }
@@ -213,7 +228,7 @@ function call_per_field(){
 	if(ge('sratag'))	sratag = ge('sratag').value; else sratag = 0;
 	if(ge('callertag'))	callertag = ge('callertag').value; else callertag = 0;
 
-
+	if(ge('active'))	active = ge('active').value; else active= 0;
 	if(ge('compare'))	compare = ge('compare').value; else compare= 0;
 	if(ge('dd'))	dd = ge('dd').value; else dd = -1;
 	if(ge('sraid'))	sraid= ge('sraid').value; else sraid= "";    
@@ -224,7 +239,7 @@ function call_per_field(){
 	if(ge('limit')) limit = ge('limit').value; else limit = 30;
 	if(ge('page')) page = ge('page').value; else page = 1;
 
-	var url = btoa("&hpdt=" + hpdt + "&centre=" + centre + "&sraid="+ sraid + "&rc_sraid="+ rc_sraid + "&dd=" + dd + "&ason=" + ason + "&by=" + by + "&type=" + type + "&bucket=" + bucket +"&expired=" + expired + "&sratag="+ sratag + "&callertag="+ callertag + "&compare=" + compare + "&page=" + page + "&limit=" + limit +"&sval=" + sval + "&stype=" + stype);
+	var url = btoa("&hpdt=" + hpdt + "&centre=" + centre + "&sraid="+ sraid + "&rc_sraid="+ rc_sraid + "&active=" + active + "&dd=" + dd + "&ason=" + ason + "&by=" + by + "&type=" + type + "&bucket=" + bucket +"&expired=" + expired + "&sratag="+ sratag + "&callertag="+ callertag + "&compare=" + compare + "&page=" + page + "&limit=" + limit +"&sval=" + sval + "&stype=" + stype);
 	j_query("#content-table").empty().html('<center>&nbsp;<br><img src="images/ajax-loader2.gif" style="border:none;" /><br>&nbsp;</center>');
 	window.location.assign("index.php?task=per_field&url="+url);
 }
@@ -238,6 +253,7 @@ function call_per_caller(){
 	if(ge('expired'))	expired = ge('expired').value; else expired = 0;
 	if(ge('sratag'))	sratag = ge('sratag').value; else sratag = 0;
 	if(ge('callertag'))	callertag = ge('callertag').value; else callertag = 0;
+	if(ge('active'))	active = ge('active').value; else active= 0;
 
 	if(ge('compare'))	compare = ge('compare').value; else compare= 0;
 	if(ge('dd'))	dd = ge('dd').value; else dd = -1;
@@ -249,7 +265,7 @@ function call_per_caller(){
 	if(ge('limit')) limit = ge('limit').value; else limit = 30;
 	if(ge('page')) page = ge('page').value; else page = 1;
 
-	var url = btoa("&hpdt=" + hpdt + "&centre=" + centre + "&callerid="+ callerid + "&rc_sraid="+ rc_sraid + "&dd=" + dd + "&ason=" + ason + "&type=" + type + "&bucket=" + bucket +"&expired=" + expired + "&sratag="+ sratag + "&callertag="+ callertag +"&compare=" + compare  
+	var url = btoa("&hpdt=" + hpdt + "&centre=" + centre + "&callerid="+ callerid + "&rc_sraid="+ rc_sraid + "&active=" + active + "&dd=" + dd + "&ason=" + ason + "&type=" + type + "&bucket=" + bucket +"&expired=" + expired + "&sratag="+ sratag + "&callertag="+ callertag +"&compare=" + compare  
 	+ "&page=" + page + "&limit=" + limit +"&sval=" + sval + "&stype=" + stype);
 	j_query("#content-table").empty().html('<center>&nbsp;<br><img src="images/ajax-loader2.gif" style="border:none;" /><br>&nbsp;</center>');
 	window.location.assign("index.php?task=per_caller&url="+url);

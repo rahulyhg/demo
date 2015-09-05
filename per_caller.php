@@ -44,6 +44,7 @@ function per_caller(){
     $centre = isset($_REQUEST['centre']) ? $_REQUEST['centre'] : "";
 	$bucket = isset($_REQUEST['bucket']) ? $_REQUEST['bucket'] : -1;
 	$dd = isset($_REQUEST['dd']) ? $_REQUEST['dd'] : -1;
+	$active = isset($_REQUEST['active']) ? $_REQUEST['active'] : 0;
 	$compare = isset($_REQUEST['compare']) ? $_REQUEST['compare'] : 1;
 	$expired = isset($_REQUEST['expired']) ? $_REQUEST['expired'] : 0;
 	$callertag = isset($_REQUEST['callertag']) ? $_REQUEST['callertag'] : 0;
@@ -101,17 +102,17 @@ function per_caller(){
    		array(date('Y-M',strtotime('-2 month', strtotime($fd))), date('m',strtotime('-2 month', strtotime($fd))), date('Y', strtotime('-2 month', strtotime($fd)))),
 		array(date('Y-M',strtotime('-3 month', strtotime($fd))), date('m',strtotime('-3 month', strtotime($fd))), date('Y', strtotime('-3 month', strtotime($fd)))),
    		array(date('Y-M',strtotime('-4 month', strtotime($fd))), date('m',strtotime('-4 month', strtotime($fd))), date('Y', strtotime('-4 month', strtotime($fd)))),
-/*
+
   		array(date('Y-M',strtotime('-5 month', strtotime($fd))), date('m',strtotime('-5 month', strtotime($fd))), date('Y', strtotime('-5 month', strtotime($fd)))),
-   		array(date('Y-M',strtotime('-6 month', strtotime($fd))), date('m',strtotime('-6 month', strtotime($fd))), date('Y', strtotime('-6 month', strtotime($fd))))
+/*   		array(date('Y-M',strtotime('-6 month', strtotime($fd))), date('m',strtotime('-6 month', strtotime($fd))), date('Y', strtotime('-6 month', strtotime($fd))))
 */
    	);
 	$mm = $ason_options[$ason][1]; $yy = $ason_options[$ason][2];
 	$dbPrefix_curr = "lksa".($mm < 4 ? ($yy - 1)."".substr($yy,-2) : $yy."".(substr($yy,-2)+1));
 
 	$hp_options = array(array("- HP Date -",""));
-	$hp_options[] = array("Fresh Bouncing", " AND d.hpdt > '2014-03-31' ");
-	$hp_options[] = array("Old", " AND d.hpdt < '2014-04-01'");
+	$hp_options[] = array("Fresh Bouncing", " AND d.hpdt > '2013-12-31' ");
+	$hp_options[] = array("Old", " AND d.hpdt < '2014-01-01'");
 
 	for($z=1; $z<=6; $z++){
    		$hp_options []  = array(date('Y-M',strtotime("-$z month", strtotime($fd))), " AND d.hpdt between '".date('Y-m-01', strtotime("-$z month", strtotime($fd)))."' AND '".date('Y-m-t', strtotime("-$z month", strtotime($fd)))."' ");
@@ -167,6 +168,18 @@ function per_caller(){
 					GROUP BY r.dealid having rcptamt >= ".$MIN_RECEIPT_AMT."
 			) AS t ON d.dealid = t.dealid WHERE d.mm = $mm ".$hp_options[$hpdt][1];
 
+			switch($dd){
+				case 0: //Both
+					$q .= "";
+					break;
+				case 1://first day
+					$q .= " and d.dd = 1 ";
+					break;
+				case 2://during
+					$q .= " and d.dd > 1 ";
+					break;
+			}
+
 			switch($expired){
 				case 0://both
 					break;
@@ -204,8 +217,20 @@ function per_caller(){
 		case 2: //Deal Wise
 			$q = " SELECT  SQL_CALC_FOUND_ROWS d.dealid, d.dealid, d.dealno, d.dealnm, d.hpdt, tcase(d.centre) as centre, d.emi ,d.callerid, b.realname as callernm, b.brkrnm as sranm, d.rgid, d.oddueamt, d.catid, d.dd, d.rec_flg, d.rec_sraid, d.rec_total, d.rec_od, t.rc_sraid, t.rc_sranm, t.rcptamt,
 			d.recstatus_sra, d.rectagid_sra, d.rectagid_caller, st.description as tag_sra, ct.description as tag_caller
-			FROM ".$dbPrefix_curr.".tbxfieldrcvry d
-			LEFT JOIN ".$user_dbPrefix.".tbmuser b ON d.callerid = b.userid AND b.recoveryagent = 1
+			FROM ".$dbPrefix.".tbmdeal JOIN ".$dbPrefix_curr.".tbxfieldrcvry d on tbmdeal.dealid = d.dealid and d.mm = $mm ";
+
+			switch($active){
+				case 0:
+					break;
+				case 1://Active
+					$q .= " AND tbmdeal.dealsts = 1 ";
+					break;
+				case 2://Closed
+					$q .= " AND tbmdeal.dealsts = 3 ";
+					break;
+			}
+
+			$q .= "LEFT JOIN ".$user_dbPrefix.".tbmuser b ON d.callerid = b.userid AND b.recoveryagent = 1
 			LEFT JOIN ".$dbPrefix.".tbmbroker b ON d.sraid = b.brkrid AND b.brkrtyp = 2
 			LEFT JOIN ".$dbPrefix.".tbmrecoverytags st ON d.rectagid_sra = st.tagid
 			LEFT JOIN ".$dbPrefix.".tbmrecoverytags ct ON d.rectagid_caller = ct.tagid
@@ -220,7 +245,7 @@ function per_caller(){
 						GROUP BY r.dealid HAVING rcptamt >= ".$MIN_RECEIPT_AMT."
 					) AS t1 JOIN ".$dbPrefix.".tbmbroker b
 					ON t1.sraid = b.brkrid AND b.brkrtyp = 2
-			) AS t ON d.dealid = t.dealid WHERE d.mm = $mm ".$hp_options[$hpdt][1]." ";
+			) AS t ON d.dealid = t.dealid WHERE 1 ".$hp_options[$hpdt][1]." ";
 
 			if($centre != "")
 				$q .= " AND d.centre = '$centre' ";
@@ -351,10 +376,16 @@ function per_caller(){
                          	<?}?>
                             </select>
 
-                            <select name="dd" id="dd" class="inputbox" size="1" onchange="call_per_caller();" <?=($type != 2 ? 'style="display:none"': '')?>>
+                            <select name="dd" id="dd" class="inputbox" size="1" onchange="call_per_caller();">
                             	<option value="0" <? if($dd == 0){?> selected="selected" <? }?>>-Assigned On-</option>
                            		<option value="1" <? if($dd == 1){?> selected="selected" <? }?>>First Day</option>
                             	<option value="2" <? if($dd == 2){?> selected="selected" <? }?>>During Month</option>
+                            </select>
+
+                            <select name="active" id="active" class="inputbox" size="1" onchange="call_per_caller();" <?=($type != 2 ? 'style="display:none"': '')?>>
+                            	<option value="0" <? if($active == 0){?> selected="selected" <? }?>>-Live-</option>
+                           		<option value="1" <? if($active == 1){?> selected="selected" <? }?>>Active</option>
+                            	<option value="2" <? if($active == 2){?> selected="selected" <? }?>>Closed</option>
                             </select>
 
                             <select name="bucket" id="bucket" class="inputbox" size="1" onchange="call_per_caller();" <?=($type != 2 ? 'style="display:none"': '')?>>
@@ -673,11 +704,7 @@ function per_caller(){
 										<td class="textleft"><?=titleCase($deal['centre'])?></td>
 										<td class="textleft"><?=titleCase($deal['callernm'])?></td>
 										<td class="textleft"><?=titleCase($deal['sranm'])?></td>
-										<?if($deal['rec_flg'] == 0){?>
-											<td class="textleft"><?=titleCase($deal['rc_sranm'])?></td>
-										<?}else{?>
-											<td class="textleft"><?=titleCase($deal['rec_sraid'])?></td>
-										<?}?>
+										<td class="textleft"><?=titleCase($deal['rc_sranm'])?></td>
 										<td class="textright"><?=nf($deal['emi'],0)?></td>
 										<td class="textright"><?=$deal['rgid']?></td>
 										<td class="textright"><?=nf($deal['oddueamt'],0)?></td>
@@ -685,7 +712,7 @@ function per_caller(){
 											<?=($deal['rec_flg'] == 0 ? nf($deal['rcptamt'],0) : nf($deal['rec_total'],0))?>
 										</td>
 										<td class="textleft"><?=$deal['tag_caller']?></td>
-										<td class="textleft"><?=$deal['tag_sra']?></td>
+										<td class="textleft"><?//$deal['tag_sra']?></td>
 										<td class="textleft">
 										<?if($_SESSION['user_id'] == $deal['callerid']){?>
 											<a href="javascript:callAddComment(<?=$deal['dealid']?>);"><img src="/images/comments.png" width="14"/></a>
@@ -699,7 +726,7 @@ function per_caller(){
                         if($totalRows==0){?>
                             <tr>
                                 <td colspan="<?=$colspan?>" align="center">
-                                    No Records found!
+                                    No Records found! (<?=$page?>)
                                 </td>
                             </tr>
 						<?}
@@ -743,14 +770,14 @@ function per_caller(){
 										</a>
 									</th>
 									<th class='textright'>
-										<a href="#" onclick="javascript:ge('type').value=2; ge('dd').value ='0';
+										<a href="#" onclick="javascript:ge('type').value=2;
 										ge('callerid').value='<?=($type == 1 ? $deal['callerid'] : '')?>';
 										call_per_caller(); return false;">
 										<?=nf($total['due'])?>
 										</a>
 									</th>
 									<th class='textright'>
-										<a href="#" onclick="javascript:ge('type').value=2;ge('dd').value ='0'; ge('rc_sraid').value = -1;
+										<a href="#" onclick="javascript:ge('type').value=2; ge('rc_sraid').value = -1;
 										ge('callerid').value='<?=($type == 1 ? $deal['callerid'] : '')?>';
 										call_per_caller(); return false;">
 										<?=nf($total['recovered'])?>
@@ -761,7 +788,7 @@ function per_caller(){
 									</th>
 
 									<th class="textright">
-										<a href="#" onclick="javascript:ge('type').value=2; ge('dd').value ='0'; ge('rc_sraid').value = 0;
+										<a href="#" onclick="javascript:ge('type').value=2; ge('rc_sraid').value = 0;
 										ge('callerid').value='<?=($type == 1 ? $deal['callerid'] : '')?>';
 										call_per_caller(); return false;">
 										<?=nf($total['due']-$total['recovered'],0)?>
@@ -771,14 +798,14 @@ function per_caller(){
 									for($b=1; $b <=$BUCKET_SIZE; $b++){?>
 										<?if($compare == 1){?>
 											<th class="textright">
-												<a href="#" onclick="javascript:ge('type').value=2; ge('dd').value ='0';
+												<a href="#" onclick="javascript:ge('type').value=2;
 												ge('callerid').value='<?=($type == 1 ? $deal['callerid'] : '')?>';
 												ge('rc_sraid').value = ''; ge('bucket').value = <?=$b?>; call_per_caller(); return false;">
 												<?=nf($total['a'.$b],0)?>
 												</a>
 											</th>
 											<th class="textright">
-												<a href="#" onclick="javascript:ge('type').value=2; ge('dd').value ='0';
+												<a href="#" onclick="javascript:ge('type').value=2;
 												ge('callerid').value='<?=($type == 1 ? $deal['callerid'] : '')?>';
 												ge('rc_sraid').value = -1; ge('bucket').value = <?=$b?>; call_per_caller(); return false;">
 												<?=nf($total['r'.$b],0)?>
@@ -786,7 +813,7 @@ function per_caller(){
 											</th>
 										<?}else{?>
 											<th class="textright">
-												<a href="#" onclick="javascript:ge('type').value=2; ge('dd').value ='0';
+												<a href="#" onclick="javascript:ge('type').value=2;
 												ge('callerid').value='<?=($type == 1 ? $deal['callerid'] : '')?>';
 												ge('rc_sraid').value = 0; ge('bucket').value = <?=$b?>; call_per_caller(); return false;">
 												<?=nf($total['b'.$b],0)?>
@@ -845,7 +872,7 @@ function per_caller(){
                        <tfoot>
                            <tr>
                                <td colspan="<?=$colspan?>">
-                                   No Records found!
+                                   No Records found! (<?=$page?>)
                                </td>
                            </tr>
                        </tfoot>

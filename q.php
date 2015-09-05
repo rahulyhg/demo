@@ -18,11 +18,18 @@ else {
 	case 8: //Update tbxbucketwisedue - set recovery information for last month - sra comment and caller comment
 	case 9: //Update tbxbucketwisedue - set recovery information for last month - SRA Tag
 	case 10: //Update tbxbucketwisedue - set recovery information for last month - Caller Tag
+	case 11: //See bucketwise number of deals for coming month
+	case 12: //Get all deal for field recovery table
+	case 13://Get all deal in bucket 1 group by their due day of the month
+	case 14://Get the list of all deals for field recovery
+	case 15://Get all SRAs with their ids
 
-	case 12: //List of deals from all years which are in at least 1 bucket (OD >= 0.8  EMI) as of now. Please note <= with duedt is very important	<br>
-	case 13: //Update OD_current into Field recovery<br/>
-	case 14: //Query to Update OD in fieldrecovery table<br/>
-	case 15: //Build Query to Generate tbxPHPFieldRecovery Table<br/>
+
+
+	case 200: //List of deals from all years which are in at least 1 bucket (OD >= 0.8  EMI) as of now. Please note <= with duedt is very important	<br>
+	case 201: //Update OD_current into Field recovery<br/>
+	case 202: //Query to Update OD in fieldrecovery table<br/>
+	case 203: //Build Query to Generate tbxPHPFieldRecovery Table<br/>
 	</div></body></html>");
 	die();
 }
@@ -32,9 +39,6 @@ $mm = date('m');; $yy = date('Y');
 $dbPrefix = "lksa";
 $dbPrefix_user = "ob_sa";
 $dbPrefix_curr = "lksa".($mm < 4 ? ($yy - 1)."".substr($yy,-2) : $yy."".(substr($yy,-2)+1));
-
-$mm= 7;
-
 
 switch($switch){
 
@@ -200,6 +204,31 @@ switch($switch){
 		print_a($q);
 		break;
 
+	case 11: //See bucketwise number of deals for coming month
+		$q = "SELECT bucket, COUNT(*) FROM ".$dbPrefix_curr.".tbxbucketwisedue WHERE ason = '$dtdt' GROUP BY bucket";
+		print_a($q);
+		break;
+
+	case 12: //Get all deal for field recovery table
+		$q = "SELECT COUNT(*) FROM $dbPrefix_curr.tbxbucketwisedue WHERE ason = '$dtdt' AND bucket > 0 AND bucket < 36";
+		print_a($q);
+		break;
+
+	case 13://Get all deal in bucket 1 group by their due day of the month
+		$q = "SELECT DAY(startduedt), bucket, COUNT(*) FROM $dbPrefix_curr.tbxbucketwisedue WHERE ason = '$dtdt' AND bucket = 1 GROUP BY bucket, DAY(startduedt)";
+		print_a($q);
+		break;
+
+
+	case 14://Get the list
+		$q = "SELECT Dealid, dealno AS DealNo, dealnm AS Customer, Centre, `Area`, City, FY, HpDt, hpexpdt AS Expriy_Dt, FinanceAmt, Period, startduedt AS START_DUE_DT, SalesmanNm AS Salesman, EMI, EMI_DUE, Bucket, Tot_Due AS Total_Due, Category, LastPaymentDt AS Last_Payment_Dt, lastpaymentamt AS Last_Payment_Amt, lastpaymentsra AS Last_Payment_To, Model, sranm AS Assigned_SRA, callernm AS Assigned_Caller, rec_flg AS Recovered_Last_Month, rec_sra AS Recovery_BY, rec_od AS Recovered_OD, rec_total AS Recovered_Total, Rectag_Sra, Rectag_Caller  FROM $dbPrefix_curr.tbxbucketwisedue WHERE ason = '$dtdt' AND bucket > 0 AND bucket <= 36";
+		print_a($q);
+		break;
+
+	case 15://Get all SRAs with their ids
+		$q = "SELECT brkrnm, brkrid FROM lksa.tbmbroker WHERE active = 2 AND brkrtyp = 2";
+		print_a($q);
+		break;
 
 
 
@@ -211,13 +240,7 @@ switch($switch){
 
 
 
-
-
-
-
-
-
-	case 12: //##List of deals from all years which are in at least 1 bucket (OD >= 0.8 * EMI) as of now. Please note "<=" with duedt is very important
+	case 200: //##List of deals from all years which are in at least 1 bucket (OD >= 0.8 * EMI) as of now. Please note "<=" with duedt is very important
 		$q = "
 		update ".$dbPrefix_curr.".tbxfieldrcvry fr, (SELECT dealid, dealno, hpdt, fy, due_emi, IFNULL(received,0), due_emi - IFNULL(received,0) AS gap, emi , (due_emi-IFNULL(received,0))/emi AS bucket FROM
 		(SELECT u.dealid, d.dealno, d.hpdt, d.period, CONCAT('Y-',d.fy) AS FY, SUM(u.DueAmt+u.CollectionChrgs) AS due_emi, sc.MthlyAmt + sc.CollectionChrgs AS emi
@@ -243,7 +266,7 @@ switch($switch){
 		print_a($q);
 		break;
 
-	case 13: //Update OD_current into Field recovery
+	case 201: //Update OD_current into Field recovery
 		$q = "insert into tbxfieldrcvry
 		(AsOn, DealId, DealNo, DealNm, Centre, Area, City, FY, HPDt, HPExpDt, FinanceAmt, Period, StartDueDt, SalesmanNm, EMI, EMI_TD, EMI_Rec, EMI_Due, Bucket, Othr_Due, Tot_Due, Clearing_Chrges, Chq_Boucing_Chrges, Penalty_Chrges, Seizing_Chrges, Other_Chrges)
 		select '$dtdt', d.DealId, d.DealNo, d.dealnm, d.Centre,  d.Area, d.City,  d.FY, d.hpdt, d.hpexpdt, d.financeamt, d.Period, d.Startduedt, s.salesmannm, (sc.mthlyamt+sc.collectionchrgs) AS EMI, due.emi AS TOT_EMI, IFNULL(rt.REC_EMI,0) AS REC_EMI, due.emi - IFNULL(rt.REC_EMI,0) AS EMI_OD, case when (due.emi - ifnull(rt.REC_EMI,0)) < 0.8 * (sc.mthlyamt+sc.collectionchrgs) then 0 else round((due.emi - ifnull(rt.REC_EMI,0))/(sc.mthlyamt+sc.collectionchrgs)) end as Bucket, chr.OTHER_DUE, (due.emi - IFNULL(rt.REC_EMI,0) +chr.OTHER_DUE) as TOT_DUE, rt.d102 as Clearing, rt.d103 as ChqBoucing, rt.d104 as Penalty, rt.d105 as Seizing, rt.d107 as Other;";
@@ -251,7 +274,7 @@ switch($switch){
 		break;
 
 
-	case 14://Query to update OD amount
+	case 202://Query to update OD amount
 
 		$q = "select pkid, dealid, InsertTimeStamp  from ".$dbPrefix_curr.".tbxfieldrcvry where odrecovered is null order by pkid desc";
 		$totalRows =0;
@@ -318,7 +341,7 @@ ON rt.dealid = due.dealid) as d set tr.odrecovered = d.due where tr.pkid = $pkid
 
 
 
-	case 15: // Build query to generate tbxPHPField recovery Table
+	case 203: // Build query to generate tbxPHPField recovery Table
 		$dt_arr = array(
 		//"2015-04-01","2015-04-05","2015-04-10","2015-04-15","2015-04-20", "2015-04-25", "2015-04-29",
 		//"2015-05-01","2015-05-05","2015-05-10","2015-05-15","2015-05-20", "2015-05-25", "2015-05-29",

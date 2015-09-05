@@ -10,6 +10,8 @@ function se_report(){
 	$columnMonths = 4;//Including current month
 	$columnYears = 3;//Including current month
 
+	$fd = date('Y-M-01');
+
     //$month = isset($_REQUEST['month']) && !empty($_REQUEST['month']) ? $_REQUEST['month'] : date('mY');
     $centre = isset($_REQUEST['centre']) ? $_REQUEST['centre'] : "";
     $salesmanid = isset($_REQUEST['salesmanid']) ? $_REQUEST['salesmanid'] : 0;
@@ -32,7 +34,7 @@ function se_report(){
 
 	$columns = array();
 	for ($i=0; $i < $columnMonths; $i++){
-		$columns[] = date('M-y',strtotime('-'.($i).' months'));
+		$columns[] = date('Y-M',strtotime('-'.($i).' month', strtotime($fd)));
 	}
 	for ($i=0; $i < $columnYears; $i++){
 			if(date('n') > 3)
@@ -63,7 +65,7 @@ function se_report(){
 
 	$q = " SELECT tcase(s.centre) as centre, ".($type==1 ? " s.salesmanid, tcase(s.salesmannm) as salesmannm, s.Role, s.active,  " : "" )."";
 		for($i=0; $i < $columnMonths; $i++){
-			$q .= " SUM(CASE WHEN hpdt BETWEEN '".date('Y-m-01', strtotime('-'.($i).' months'))."' AND '".date('Y-m-t',strtotime('-'.($i).' months'))."' THEN 1 ELSE 0 END) AS `".$columns[$c++]."`,
+			$q .= " SUM(CASE WHEN hpdt BETWEEN '".date('Y-m-01', strtotime('-'.($i).' month', strtotime($fd))) ."' AND '".date('Y-m-t',strtotime('-'.($i).' month', strtotime($fd)))."' THEN 1 ELSE 0 END) AS `".$columns[$c++]."`,
 			";
 		}
 
@@ -76,7 +78,6 @@ function se_report(){
 			$q .= " SUM(CASE WHEN fy='$fy' THEN 1 ELSE 0 END) AS `".$columns[$c++]."`,
 			";
 		}
-
 
 	$q .="
 		COUNT(d.dealid) AS Total

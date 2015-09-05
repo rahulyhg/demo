@@ -20,6 +20,8 @@ function deallist(){
 		$last_fy = date('y',  strtotime('-1 year'))."-".date('y');
 	}
 
+	$fd = date('Y-M-01');
+
     $search = isset($_REQUEST['search']) ? trim($_REQUEST['search']) : "";
 
     $centre = isset($_REQUEST['centre']) ? $_REQUEST['centre'] : "";
@@ -55,9 +57,9 @@ function deallist(){
 	   	array("This Week", " AND hpdt >= '".date('Y-m-d',strtotime('monday this week'))."' "),
 //		array("This Quarter", " AND hpdt >= MAKEDATE(YEAR(NOW()),1) + INTERVAL QUARTER(NOW())-1 QUARTER AND hpdt < MAKEDATE(YEAR(NOW()),1) + INTERVAL QUARTER(NOW())-0 QUARTER "),
    		array(date('Y-M'), " AND month(hpdt) = month(curdate()) and year(hpdt) = year(curdate()) "),
-   		array(date('Y-M',strtotime('-1 month')), " AND hpdt >= DATE_FORMAT(CURRENT_DATE - INTERVAL 1 MONTH, '%Y/%m/01' ) AND hpdt < DATE_FORMAT( CURRENT_DATE, '%Y/%m/01') "),
-   		array(date('Y-M',strtotime('-2 months')), " AND hpdt >= DATE_FORMAT(CURRENT_DATE - INTERVAL 2 MONTH, '%Y/%m/01' ) AND hpdt < DATE_FORMAT( CURRENT_DATE - INTERVAL 1 MONTH, '%Y/%m/01') "),
-   		array(date('Y-M',strtotime('-3 months')), " AND hpdt >= DATE_FORMAT(CURRENT_DATE - INTERVAL 3 MONTH, '%Y/%m/01' ) AND hpdt < DATE_FORMAT( CURRENT_DATE - INTERVAL 2 MONTH, '%Y/%m/01') "),
+   		array(date('Y-M',strtotime('-1 month', strtotime($fd))), " AND hpdt >= DATE_FORMAT(CURRENT_DATE - INTERVAL 1 MONTH, '%Y/%m/01' ) AND hpdt < DATE_FORMAT( CURRENT_DATE, '%Y/%m/01') "),
+   		array(date('Y-M',strtotime('-2 month', strtotime($fd))), " AND hpdt >= DATE_FORMAT(CURRENT_DATE - INTERVAL 2 MONTH, '%Y/%m/01' ) AND hpdt < DATE_FORMAT( CURRENT_DATE - INTERVAL 1 MONTH, '%Y/%m/01') "),
+   		array(date('Y-M',strtotime('-3 month', strtotime($fd))), " AND hpdt >= DATE_FORMAT(CURRENT_DATE - INTERVAL 3 MONTH, '%Y/%m/01' ) AND hpdt < DATE_FORMAT( CURRENT_DATE - INTERVAL 2 MONTH, '%Y/%m/01') "),
 // 		array("Last 2 Months", " AND hpdt >= DATE_FORMAT(CURRENT_DATE - INTERVAL 2 MONTH, '%Y/%m/01' ) AND hpdt < DATE_FORMAT( CURRENT_DATE, '%Y/%m/01') "),
 // 		array("Last Quarter", " AND hpdt >= MAKEDATE(YEAR(NOW()),1) + INTERVAL QUARTER(NOW())-2 QUARTER AND hpdt < MAKEDATE(YEAR(NOW()),1) + INTERVAL QUARTER(NOW())-1 QUARTER "),
    		array("Full Year: ".date('Y'), " AND year(hpdt) = year(curdate()) "),

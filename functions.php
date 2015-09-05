@@ -221,7 +221,7 @@ function printHeader($title = 'Loksuvidha Reports', $menu='Y'){
 	<div id="border-top" class="h_green">
 		<div>
 			<div>
-				<span class="title"><img src='images/android-icon-96x96.png'/>Loksuvidha</span>
+				<span class="title"><img src='images/android-icon-96x96.png'/>LokSuvidha</span>
 			</div>
 		</div>
 	</div>
@@ -246,6 +246,9 @@ function printHeader($title = 'Loksuvidha Reports', $menu='Y'){
 							<li style="width: 144px;"><a class="icon-16-user" href="index.php?task=generic&index=13">Bank Posting</a></li>
 							<li class="separator" style="width: 144px;"><span></span></li>
 							<li style="width: 144px;"><a class="icon-16-user" href="index.php?task=generic&index=16">Seized Vehicles</a></li>
+							<li class="separator" style="width: 144px;"><span></span></li>
+							<li style="width: 144px;"><a class="icon-16-user" href="index.php?task=generic&index=22">Employee List</a></li>
+							<li style="width: 144px;"><a class="icon-16-user" href="index.php?task=generic&index=23">Due Date List</a></li>
 							<li class="separator" style="width: 144px;"><span></span></li>
 							<li style="width: 144px;"><a class="icon-16-user" href="index.php?task=dashboard">Dashboard</a></li>
 						</ul>
@@ -529,6 +532,7 @@ tr.headers{font-size:12px;}
 .deallist, .dashboard{background:#f5f5f5;margin:0px;/* border:1px solid #ccc;border-width: 0px 1px 1px 1px;*/}
 .deallist .recovered{background-color:#fffacc;}
 .deallist .pending{background-color:#fff;}
+.deallist .seized{background-color:#FFB6C1;}
 .deallist .recovered_by{float:left;/*font-weight:bold;*/padding:9px 5px 5px 0px;}
 .deallist .deal{margin:4px 2px 5px 2px;padding: 5px;border: 1px solid #ddd;}
 .cname{font-weight:bold;font-size:15px;width:70%;float:left;}
