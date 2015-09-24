@@ -50,10 +50,28 @@ function generic(){
 	$t1 = executeSelect($q1);
 	if($t1['row_count'] > 0){$salesman = $t1['r'];}
 
+	//Get all banks
+	$q1 = "SELECT bankid, banknm FROM $dbPrefix.tbmsourcebank where sourcebank = 1";
+	$t1 = executeSelect($q1);
+	if($t1['row_count'] > 0){$banks = $t1['r'];}
+
 	//Get all bank branches
-	$q1 = "SELECT b.bankBrnchid AS bankBrnchid, CONCAT(s.banknm, '-', tcase(b.bankBrnchNm)) AS branch FROM $dbPrefix.tbmsourcebank s JOIN $dbPrefix.tbmsourcebankbrnch b ON s.bankid = b.bankid ORDER BY s.bankid, b.bankBrnchNm";
+	$q1 = "SELECT b.bankBrnchid AS bankBrnchid, CONCAT(s.banknm, '-', tcase(b.bankBrnchNm)) AS branch FROM $dbPrefix.tbmsourcebank s JOIN $dbPrefix.tbmsourcebankbrnch b ON s.bankid = b.bankid and s.sourcebank = 1 ORDER BY s.bankid, b.bankBrnchNm";
 	$t1 = executeSelect($q1);
 	if($t1['row_count'] > 0){$branch = $t1['r'];}
+
+	//Get all Callers
+	$q1 = "SELECT userid as callerid, realname as callernm, active from ob_sa.tbmuser where active = 2 and recoveryagent = 1 order by active desc, realname asc";
+	$t1 = executeSelect($q1);
+	if($t1['row_count'] > 0){
+		$caller = $t1['r'];
+	}
+	//Get all SRAs1
+	$q1 = "SELECT brkrid as sraid, brkrnm as sranm, active from ".$dbPrefix.".tbmbroker where active != 3 and brkrtyp = 2 order by active desc, brkrnm asc";
+	$t1 = executeSelect($q1);
+	if($t1['row_count'] > 0){
+			$sra = $t1['r'];
+	}
 
 /********************************Filters****************************************/
 	$c = 0;
@@ -97,6 +115,15 @@ function generic(){
 	}
 
 	$c =0;
+	$filters ['state'] = array('title' => '','hover' => 'State','options' => array(
+		$c++ => array('value' => "-State-", 'query' => " "),
+		$c++ => array('value' => "MP", 'query' => " AND d.state = 'MADHYA PRADESH' "),
+		$c++ => array('value' => "MH", 'query' => " AND d.state = 'MAHARASHTRA' "),
+		$c++ => array('value' => "CG", 'query' => " AND d.state = 'CHHATTISGARH' "),
+		)
+	);
+
+	$c =0;
 	$filters ['reccentre'] = array('title' => '','hover' => 'Recovery Centre','options' => array(
 		$c++ => array('value' => "-Rec Centre-", 'query' => " "),
 		)
@@ -119,8 +146,35 @@ function generic(){
 		$c++ => array('value' => "-Bank & Branch-", 'query' => " "),
 		)
 	);
+
+	foreach($banks as $s){
+		$filters ['branch']['options'][$c++] = array('value' => $s['banknm']." (All)", 'query' => " AND bank.bankid = '".$s['bankid']."' ");
+	}
+
 	foreach($branch as $s){
 		$filters ['branch']['options'][$c++] = array('value' => $s['branch'], 'query' => " AND bankBrnchid = '".$s['bankBrnchid']."' ");
+	}
+
+	$c =0;
+	$filters ['caller'] = array('title' => '','hover' => 'Caller','options' => array(
+		$c++ => array('value' => "-Caller-", 'query' => " "),
+		$c++ => array('value' => "All Non Assigned", 'query' => " AND tbxfieldrcvry.callerid is NULL"),
+		$c++ => array('value' => "All Assigned", 'query' => " AND tbxfieldrcvry.callerid is not NULL"),
+		)
+	);
+	foreach($caller as $s){
+		$filters ['caller']['options'][$c++] = array('value' => $s['callernm'], 'query' => " AND tbxfieldrcvry.callerid = '".$s['callerid']."' ");
+	}
+
+	$c =0;
+	$filters ['sra'] = array('title' => '','hover' => 'SRA','options' => array(
+		$c++ => array('value' => "-SRA-", 'query' => " "),
+		$c++ => array('value' => "All Non Assigned", 'query' => " AND tbxfieldrcvry.sraid is NULL"),
+		$c++ => array('value' => "All Assigned", 'query' => " AND tbxfieldrcvry.sraid is not NULL"),
+		)
+	);
+	foreach($sra as $s){
+		$filters ['sra']['options'][$c++] = array('value' => $s['sranm'], 'query' => " AND tbxfieldrcvry.sraid = '".$s['sraid']."' ");
 	}
 
 	$c =0;
@@ -152,7 +206,8 @@ function generic(){
 	$c =0;
 	$filters ['bucket'] = array('title' => '','hover' => 'Bucket','options' => array(
 		$c++ => array('value' => "-Bucket-", 'query' => " "),
-		$c++ => array('value' => "0", 'query' => " AND (tbxfieldrcvry.rgid is null Or tbxfieldrcvry.rgid = 0 ) "),
+		$c++ => array('value' => "In Bckt", 'query' => " AND tbxfieldrcvry.rgid is not null "),
+		$c++ => array('value' => "No Bckt", 'query' => " AND (tbxfieldrcvry.rgid is null Or tbxfieldrcvry.rgid = 0 ) "),
 		$c++ => array('value' => "1", 'query' => " AND tbxfieldrcvry.rgid = 1 "),
 		$c++ => array('value' => "2", 'query' => " AND tbxfieldrcvry.rgid = 2 "),
 		$c++ => array('value' => "3", 'query' => " AND tbxfieldrcvry.rgid = 3 "),
@@ -203,9 +258,9 @@ function generic(){
 
 	$c =0;
 	$filters ['disbursed'] = array('title' => '','hover' => 'Disbursed Or Not','options' => array(
-		$c++ => array('value' => "-Disbused-", 'query' => " "),
-		$c++ => array('value' => "Yes", 'query' => " AND d.bankduedt is not null"),
-		$c++ => array('value' => "No", 'query' => " AND d.bankduedt is null"),
+		$c++ => array('value' => "Not Disbursed", 'query' => " AND d.bankduedt is null"),
+		$c++ => array('value' => "Disbursed", 'query' => " AND d.bankduedt is not null"),
+		$c++ => array('value' => "All", 'query' => " "),
 		)
 	);
 
@@ -232,7 +287,7 @@ function generic(){
 	);
 	$c =0; $yy = date('Y'); $mm =date('n');
 	$filters ['mm'] = array('title' => '','hover' => 'Month','options' => array());
-	for($i=0; $i<=4; $i++){
+	for($i=0; $i<=5; $i++){
 		$strm = strtotime("-$i month", strtotime($fd));
 		$filters ['mm']['options'][$c++] = array('value' => date('Y-M',$strm), 'query' => ' AND mm = '. date('m',$strm).'' ,'query1' => " AND rcptdt between '".date('Y-m-d',$strm)."' and '".date('Y-m-t',$strm)."' ");
 	}
@@ -366,7 +421,7 @@ function generic(){
 			FROM $dbPrefix.tbmdeal d
 			LEFT JOIN $dbPrefix_curr.tbxfieldrcvry f on d.dealid = f.dealid and f.mm= ".date('n')."
 			LEFT JOIN (SELECT d.dealid, SUM(CASE WHEN p.PDCDt < DATE_SUB(CURRENT_DATE, INTERVAL DAYOFMONTH(CURRENT_DATE)-1 DAY) AND p.PDCDpstInd = 'N' THEN 1
-				WHEN p.PDCDt > DATE_SUB(CURRENT_DATE, INTERVAL DAYOFMONTH(CURRENT_DATE)-1 DAY) THEN 1 ELSE 0 END) AS PendingPDC FROM $dbPrefix.tbmdeal d JOIN $dbPrefix.tbmdealpdc p ON d.dealid = p.dealid AND d.dealsts = 1 GROUP BY p.dealid) AS pdc
+			WHEN p.PDCDt > DATE_SUB(CURRENT_DATE, INTERVAL DAYOFMONTH(CURRENT_DATE)-1 DAY) THEN 1 ELSE 0 END) AS PendingPDC FROM $dbPrefix.tbmdeal d JOIN $dbPrefix.tbmdealpdc p ON d.dealid = p.dealid AND d.dealsts = 1 GROUP BY p.dealid) AS pdc
 				ON d.dealid = pdc.dealid
 			LEFT JOIN $dbPrefix.tbmdealecs e ON e.dealid = d.dealid
 			LEFT JOIN $dbPrefix.tbmdealnac n ON n.dealid = d.dealid
@@ -394,7 +449,11 @@ function generic(){
 
 	//index == 1
 	$c = 0;
-	$q = "SELECT t1.mm, SUM(assigned_fd) AS assigned_fd, SUM(recovered_fd) AS recovered_fd, SUM(assigned_dm) AS assigned_dm, SUM(recovered_dm) AS recovered_dm, COUNT(dealid) AS assigned,  SUM(recovered) AS recovered, round(SUM(recovered)/COUNT(dealid)*100) as per";
+	$q = "SELECT t1.mm,
+	SUM(assigned_fd) AS assigned_fd, SUM(recovered_fd) AS recovered_fd, (SUM(recovered_fd)/SUM(assigned_fd)*100) as per_fd,
+
+	SUM(assigned_dm) AS assigned_dm, SUM(recovered_dm) AS recovered_dm, (SUM(recovered_dm)/SUM(assigned_dm)*100) as per_dm,
+	COUNT(dealid) AS assigned,  SUM(recovered) AS recovered, round(SUM(recovered)/COUNT(dealid)*100) as per";
 	for($b = 1; $b <=$BUCKET_SIZE; $b++){
 		$q .=", SUM(a$b) AS a$b, SUM(r$b) AS r$b ";
 	}
@@ -419,15 +478,17 @@ function generic(){
 		LEFT JOIN (
 			SELECT Month(r.rcptdt) as mm, r.dealid, SUM(rd.rcptamt) AS rcptamt FROM ".$dbPrefix_curr.".tbxdealrcpt r JOIN ".$dbPrefix_curr.".tbxdealrcptdtl rd ON r.rcptid = rd.rcptid WHERE r.cclflg = 0 AND r.CBflg = 0 AND (rd.dctyp = 101 OR rd.dctyp = 111) and r.rcptpaymode = 1
 			GROUP BY r.dealid, month(r.rcptdt)
-		) AS t ON d.dealid = t.dealid and d.mm = t.mm where 1 :hpdt :centre
+		) AS t ON d.dealid = t.dealid and d.mm = t.mm where 1 :hpdt :centre :state
 	) t1 GROUP BY t1.mm having 1 ";
 
 	$columns = array(
 		$c++ => array('align'=>-1, 'sort'=>0, 'ops'=> 'toMonthName', 'link'=> 0, 'stotal' => 0, 'name' => 'Month'),
 		$c++ => array('align'=>1, 'sort'=>0, 'ops'=> 'nf', 'link'=> 0, 'stotal' => 0, 'name' => 'OPENING','style'=>'background-color:#F5F5DC'),
 		$c++ => array('align'=>1, 'sort'=>0, 'ops'=> 'nf', 'link'=> 0, 'stotal' => 0, 'name' => 'O-REC','style'=>'background-color:#F5F5DC'),
+		$c++ => array('align'=>1, 'sort'=>0, 'ops'=> 'nf', 'link'=> 0, 'stotal' => 0, 'name' => '%','style'=>'background-color:#F5F5DC', 'suffix'=> '%'),
 		$c++ => array('align'=>1, 'sort'=>0, 'ops'=> 'nf', 'link'=> 0, 'stotal' => 0, 'name' => 'NEW','style'=>'background-color:#FFE4C4'),
 		$c++ => array('align'=>1, 'sort'=>0, 'ops'=> 'nf', 'link'=> 0, 'stotal' => 0, 'name' => 'N-REC','style'=>'background-color:#FFE4C4'),
+		$c++ => array('align'=>1, 'sort'=>0, 'ops'=> 'nf', 'link'=> 0, 'stotal' => 0, 'name' => '%','style'=>'background-color:#FFE4C4', 'suffix'=> '%'),
 		$c++ => array('align'=>1, 'sort'=>0, 'ops'=> 'nf', 'link'=> 0, 'stotal' => 0, 'name' => 'Total','style'=>'background-color:#F5F5DC'),
 		$c++ => array('align'=>1, 'sort'=>0, 'ops'=> 'nf', 'link'=> 0, 'stotal' => 0, 'name' => 'T-REC','style'=>'background-color:#F5F5DC'),
 		$c++ => array('align'=>1, 'sort'=>0, 'ops'=> 'nf', 'link'=> 0, 'stotal' => 0, 'name' => '%','style'=>'background-color:#F5F5DC', 'suffix'=> '%'),
@@ -443,7 +504,7 @@ function generic(){
 		'title'=> 'Recovery History',
 		'default_sort' => 't1.mm',
 		'default_sort_type' => 'ASC',
-		'filters' => array('hpdt', 'centre'),
+		'filters' => array('hpdt', 'centre', 'state'),
 		'q' => $q,
 		'columns' => $columns,
 	);
@@ -453,9 +514,10 @@ function generic(){
 		'title'=> 'Caller Tags',
 		'default_sort' => 'rectagid_caller',
 		'default_sort_type' => 'ASC',
-		'filters' => array('mm', 'hpdt', 'centre', 'bucket', 'dd'),
+		'alternate' => array(array(2, 'Caller Tags'), array(3, 'SRA Tags'),array(4, 'Caller Tag Entry'),array(5,'SRA Tag Entry')),
+		'filters' => array('mm', 'hpdt', 'centre', 'state', 'bucket', 'dd'),
 		'q' => "SELECT ct.description AS CALLER_TAG, COUNT(tbxfieldrcvry.dealid) AS deals FROM ".$dbPrefix.".tbmdeal d JOIN ".$dbPrefix_curr.".tbxfieldrcvry ON d.dealid = tbxfieldrcvry.dealid LEFT JOIN $dbPrefix.tbmrecoverytags ct ON rectagid_caller = ct.tagid
-		WHERE rec_flg = 0 :mm :hpdt :centre :bucket :dd GROUP BY rectagid_caller",
+		WHERE rec_flg = 0 :mm :hpdt :centre :state :bucket :dd GROUP BY rectagid_caller",
 		'columns' => array(
 			$c++ => array('align'=>-1, 'sort'=>0, 'ops'=> NULL, 'link'=> 0, 'stotal' => 0, 'name' => 'Caller Tag'),
 			$c++ => array('align'=>1, 'sort'=>0, 'ops'=> 'nf', 'link'=> 0, 'stotal' => 1, 'name' => 'Deals'),
@@ -467,9 +529,10 @@ function generic(){
 		'title'=> 'SRA Tags',
 		'default_sort' => 'rectagid_sra',
 		'default_sort_type' => 'ASC',
-		'filters' => array('mm', 'hpdt', 'centre', 'bucket', 'dd'),
+		'alternate' => array(array(2, 'Caller Tags'), array(3, 'SRA Tags'),array(4, 'Caller Tag Entry'),array(5,'SRA Tag Entry')),
+		'filters' => array('mm', 'hpdt', 'centre', 'state', 'bucket', 'dd'),
 		'q' => "SELECT ct.description AS SRA_TAG, COUNT(tbxfieldrcvry.dealid) AS deals FROM ".$dbPrefix.".tbmdeal d JOIN ".$dbPrefix_curr.".tbxfieldrcvry ON d.dealid = tbxfieldrcvry.dealid LEFT JOIN $dbPrefix.tbmrecoverytags ct ON rectagid_sra = ct.tagid
-		WHERE rec_flg = 0 :mm :hpdt :centre :bucket :dd GROUP BY rectagid_sra",
+		WHERE rec_flg = 0 :mm :hpdt :centre :state :bucket :dd GROUP BY rectagid_sra",
 		'columns' => array(
 			$c++ => array('align'=>-1, 'sort'=>0, 'ops'=> NULL, 'link'=> 0, 'stotal' => 0, 'name' => 'SRA Tag'),
 			$c++ => array('align'=>1, 'sort'=>0, 'ops'=> 'nf', 'link'=> 0, 'stotal' => 1, 'name' => 'Deals'),
@@ -481,9 +544,10 @@ function generic(){
 		'title'=> 'Caller Tag Entry',
 		'default_sort' => 'realname',
 		'default_sort_type' => 'ASC',
-		'filters' => array('mm', 'hpdt', 'centre', 'bucket','dd'),
+		'alternate' => array(array(2, 'Caller Tags'), array(3, 'SRA Tags'),array(4, 'Caller Tag Entry'),array(5,'SRA Tag Entry')),
+		'filters' => array('mm', 'hpdt', 'centre', 'state', 'bucket','dd'),
 		'q' => "SELECT u.realname, sum(case when rectagid_caller is null then 0 else 1 end) as entered, sum(case when rectagid_caller is null then 1 else 0 end) as notentered, COUNT(tbxfieldrcvry.dealid) AS deals FROM ".$dbPrefix.".tbmdeal d JOIN ".$dbPrefix_curr.".tbxfieldrcvry ON d.dealid = tbxfieldrcvry.dealid LEFT JOIN ob_sa.tbmuser u ON tbxfieldrcvry.callerid = u.userid
-		WHERE rec_flg = 0 :mm :hpdt :centre :bucket :dd GROUP BY tbxfieldrcvry.callerid",
+		WHERE rec_flg = 0 :mm :hpdt :centre :state :bucket :dd GROUP BY tbxfieldrcvry.callerid",
 		'columns' => array(
 			$c++ => array('align'=>-1, 'sort'=>0, 'ops'=> NULL, 'link'=> 0, 'stotal' => 0, 'name' => 'Caller Name'),
 			$c++ => array('align'=>1, 'sort'=>0, 'ops'=> 'nf', 'link'=> 0, 'stotal' => 1, 'name' => 'Entered'),
@@ -497,10 +561,11 @@ function generic(){
 		'title'=> 'SRA Tag Entry',
 		'default_sort' => 'brkrnm',
 		'default_sort_type' => 'ASC',
+		'alternate' => array(array(2, 'Caller Tags'), array(3, 'SRA Tags'),array(4, 'Caller Tag Entry'),array(5,'SRA Tag Entry')),
 		'row_limit' => 100,
-		'filters' => array('mm', 'hpdt', 'centre', 'bucket','dd'),
-		'q' => "SELECT sql_cal_found_rows b.brkrnm, sum(case when rectagid_sra is null then 0 else 1 end) as entered, sum(case when rectagid_sra is null then 1 else 0 end) as notentered, COUNT(tbxfieldrcvry.dealid) AS deals FROM ".$dbPrefix.".tbmdeal d JOIN ".$dbPrefix_curr.".tbxfieldrcvry ON d.dealid = tbxfieldrcvry.dealid LEFT JOIN $dbPrefix.tbmbroker b ON tbxfieldrcvry.sraid = b.brkrid and b.brkrtyp = 2
-		WHERE rec_flg = 0 :mm :hpdt :centre :bucket :dd GROUP BY tbxfieldrcvry.sraid",
+		'filters' => array('mm', 'hpdt', 'centre', 'state', 'bucket','dd'),
+		'q' => "SELECT sql_calc_found_rows b.brkrnm, sum(case when rectagid_sra is null then 0 else 1 end) as entered, sum(case when rectagid_sra is null then 1 else 0 end) as notentered, COUNT(tbxfieldrcvry.dealid) AS deals FROM ".$dbPrefix.".tbmdeal d JOIN ".$dbPrefix_curr.".tbxfieldrcvry ON d.dealid = tbxfieldrcvry.dealid LEFT JOIN $dbPrefix.tbmbroker b ON tbxfieldrcvry.sraid = b.brkrid and b.brkrtyp = 2
+		WHERE rec_flg = 0 :mm :hpdt :centre :state :bucket :dd GROUP BY tbxfieldrcvry.sraid",
 		'columns' => array(
 			$c++ => array('align'=>-1, 'sort'=>0, 'ops'=> NULL, 'link'=> 0, 'stotal' => 0, 'name' => 'SRA Name'),
 			$c++ => array('align'=>1, 'sort'=>0, 'ops'=> 'nf', 'link'=> 0, 'stotal' => 1, 'name' => 'Entered'),
@@ -515,10 +580,10 @@ function generic(){
 		'title'=> 'Disbursement Report',
 		'default_sort' => 'd.hpdt',
 		'default_sort_type' => 'asc',
-		'filters' => array('hpdt', 'centre', 'dealer', 'salesman', 'disbursed'),
+		'filters' => array('hpdt', 'centre', 'state' , 'dealer', 'salesman', 'disbursed'),
 		'q' => "SELECT sql_calc_found_rows d.dealno, d.hpdt, d.dealrefno AS account, tcase(d.dealnm) as dealnm, DATE_ADD(d.bankduedt, INTERVAL -1 MONTH) AS disbursementdt, tcase(br.brkrnm) as brkrnm, CONCAT(v.make, ' ',v.model) AS Vehicle, tcase(d.centre) as centre, d.financeamt, f.disbursementamt, tcase(s.salesmannm) as salesmannm, b.banknm, b.bankbrnchnm
 		FROM $dbPrefix.tbmdeal d
-		JOIN $dbPrefix.tbadealsalesman a JOIN $dbPrefix.tbmsalesman s ON d.dealid = a.dealid AND a.salesmanid = s.salesmanid AND d.dealsts = 1 :hpdt :centre :salesman :disbursed
+		JOIN $dbPrefix.tbadealsalesman a JOIN $dbPrefix.tbmsalesman s ON d.dealid = a.dealid AND a.salesmanid = s.salesmanid AND d.dealsts = 1 :hpdt :centre :state :salesman :disbursed
 		LEFT JOIN $dbPrefix.tbmbroker br ON br.brkrid = d.brkrid
 		LEFT JOIN $dbPrefix.tbadealfnncdtls f ON d.dealid = f.dealid
 		LEFT JOIN $dbPrefix.tbmdealvehicle v ON d.dealid = v.dealid
@@ -549,15 +614,13 @@ function generic(){
 		'title'=> 'Daywise Recovery',
 		'default_sort' => 'rcptdt',
 		'default_sort_type' => 'asc',
-		'filters' => array('mm', 'dd', 'hpdt', 'centre'),
+		'filters' => array('mm', 'dd', 'hpdt', 'centre', 'state'),
 		'row_limit' => 50,
 		'q' => "SELECT r.rcptdt,
 			SUM(CASE WHEN d.dd = 1 THEN 1 ELSE 0 END) AS fd,
-			SUM(CASE WHEN d.dd = 1 THEN 1 ELSE 0 END)/(SELECT COUNT(dealid) FROM ".$dbPrefix_curr.".tbxfieldrcvry d WHERE dd = 1 :mm :hpdt :centre)*100 AS fd_per,
 			SUM(CASE WHEN d.dd != 1 THEN 1 ELSE 0 END) AS dm,
-			SUM(CASE WHEN d.dd != 1 THEN 1 ELSE 0 END)/(SELECT COUNT(dealid) FROM ".$dbPrefix_curr.".tbxfieldrcvry d WHERE dd != 1  :mm :hpdt :centre)*100 AS dm_per,
 			COUNT(DISTINCT r.dealid) AS recovered,
-			COUNT(DISTINCT r.dealid)/(SELECT COUNT(dealid) FROM ".$dbPrefix_curr.".tbxfieldrcvry d WHERE 1 :mm :hpdt :centre)*100 AS tot_per
+			COUNT(DISTINCT r.dealid)/(SELECT COUNT(dealid) FROM ".$dbPrefix_curr.".tbxfieldrcvry d WHERE 1 :mm :hpdt :centre :state)*100 AS tot_per
 			, SUM(r.totrcptamt) as totamt
 			, SUM(CASE WHEN d.rgid = 1 THEN 1 ELSE 0 END) AS B1
 			, SUM(CASE WHEN d.rgid = 2 THEN 1 ELSE 0 END) AS B2
@@ -566,14 +629,12 @@ function generic(){
 			, SUM(CASE WHEN d.rgid = 5 THEN 1 ELSE 0 END) AS B5
 			, SUM(CASE WHEN d.rgid > 5 THEN 1 ELSE 0 END) AS B6
 			FROM ".$dbPrefix_curr.".tbxfieldrcvry d JOIN (select dealid, rcptdt, sum(totrcptamt) as totrcptamt from ".$dbPrefix_curr.".tbxdealrcpt rd
-			where rd.cbflg =0 AND rd.cclflg =0 AND rd.rcptpaymode = 1 and rd.totrcptamt > 0 $rcpt_clause group by dealid, day(rcptdt)) as r ON r.dealid = d.dealid :mm :dd :hpdt :centre
+			where rd.cbflg =0 AND rd.cclflg =0 AND rd.rcptpaymode = 1 and rd.totrcptamt > 0 $rcpt_clause group by dealid, day(rcptdt)) as r ON r.dealid = d.dealid :mm :dd :hpdt :centre :state
 			GROUP BY r.rcptdt ",
 		'columns' => array(
 			$c++ => array('align'=>1, 'sort'=>1, 'ops'=> 'df', 'link'=> 0, 'stotal' => 2, 'name' => 'Date',),
-			$c++ => array('align'=>1, 'sort'=>1, 'ops'=> NULL, 'link'=> 0, 'stotal' => 1, 'name' => 'Opening','style'=>'background-color:#F5F5DC'),
-			$c++ => array('align'=>1, 'sort'=>1, 'ops'=> NULL, 'link'=> 0, 'stotal' => 1, 'name' => '%','style'=>'background-color:#F5F5DC', 'suffix'=> '%'),
-			$c++ => array('align'=>1, 'sort'=>1, 'ops'=> NULL, 'link'=> 0, 'stotal' => 1, 'name' => 'New','style'=>'background-color:#FFE4C4'),
-			$c++ => array('align'=>1, 'sort'=>1, 'ops'=> NULL, 'link'=> 0, 'stotal' => 1, 'name' => '%','style'=>'background-color:#FFE4C4', 'suffix'=> '%'),
+			$c++ => array('align'=>1, 'sort'=>1, 'ops'=> NULL, 'link'=> 0, 'stotal' => 1, 'name' => 'Opening','style'=>'background-color:#F5F5DC','cummulative'=>1),
+			$c++ => array('align'=>1, 'sort'=>1, 'ops'=> NULL, 'link'=> 0, 'stotal' => 1, 'name' => 'New','style'=>'background-color:#FFE4C4','cummulative'=>1),
 			$c++ => array('align'=>1, 'sort'=>1, 'ops'=> NULL, 'link'=> 0, 'stotal' => 1, 'name' => 'Total','style'=>'background-color:#F5F5DC', 'cummulative'=>1),
 			$c++ => array('align'=>1, 'sort'=>1, 'ops'=> NULL, 'link'=> 0, 'stotal' => 1, 'name' => '%','style'=>'background-color:#F5F5DC', 'suffix'=> '%'),
 			$c++ => array('align'=>1, 'sort'=>1, 'ops'=> 'nf', 'link'=> 0, 'stotal' => 1, 'name' => 'Amount', 'cummulative'=>1),
@@ -591,30 +652,32 @@ function generic(){
 	$mm = isset($_REQUEST['mm']) ? $_REQUEST['mm'] : 0;
 	$rcpt_clause = $filters ['mm']['options'][$mm]['query1'];
 	$query[$qi] = array(
-		'title'=> 'Cash Collection Report',
+		'title'=> 'SRA Commission',
 		'default_sort' => 'centre asc, brkrnm',
 		'default_sort_type' => 'asc',
-		'filters' => array('mm', 'dd', 'hpdt','reccentre'),
+		'alternate' => array(array(23, 'Caller Commission'), array(8, 'SRA Commission'),),
+		'filters' => array('mm', 'dd', 'hpdt','reccentre', 'state'),
 		'row_limit' => 100,
 		'q' => "SELECT tcase(b.centre) as centre, tcase(ifnull(b.brkrnm,'Unassigned')) as brkrnm,
-		sum(case when dd=1 then 1 else 0 end) as Assigned, sum(case when dd=1 and (rc.od is not null or d.rec_flg = 1) then 1 else 0 end) as Recovered, sum(case when dd=1		and (rc.od is not null or d.rec_flg = 1) then 1 else 0 end)/sum(case when dd=1 then 1 else 0 end)*100 as per,
+		sum(case when dd=1 then 1 else 0 end) as Assigned, sum(case when dd=1 and (rc.od is not null or d.rec_flg = 1) then 1 else 0 end) as Recovered,
+		sum(case when dd=1 and (rc.od is not null or d.rec_flg = 1) then 1 else 0 end)/sum(case when dd=1 then 1 else 0 end)*100 as per,
 		SUM(rc.od) AS total,
-		SUM(CASE WHEN rgid=1 THEN rc.od ELSE 0 END) AS B1, SUM(CASE WHEN rgid=2 THEN rc.od ELSE 0 END) AS B2,
-		SUM(CASE WHEN rgid=3 THEN rc.od ELSE 0 END) AS B3, SUM(CASE WHEN rgid=4 THEN rc.od ELSE 0 END) AS B4,
-		SUM(CASE WHEN rgid=5 THEN rc.od ELSE 0 END) AS B5, SUM(CASE WHEN rgid >5 THEN rc.od ELSE 0 END) AS B6,
-
-		SUM(CASE WHEN rgid=1 THEN rc.od ELSE 0 END)*0.02+SUM(CASE WHEN rgid=2 THEN rc.od ELSE 0 END)*0.04+SUM(CASE WHEN rgid=3 THEN rc.od ELSE 0 END)*0.06+
-		SUM(CASE WHEN rgid=4 THEN rc.od ELSE 0 END)*0.08+SUM(CASE WHEN rgid=5 THEN rc.od ELSE 0 END)*0.08+SUM(CASE WHEN rgid >5 THEN rc.od ELSE 0 END)*0.1 as Comission
-		, SUM(rc.cb) as cb, SUM(rc.penalty) as penalty,	SUM(rc.cb)*0.15 + SUM(rc.penalty)*0.1 as comission2
-
+		SUM(CASE WHEN rgid=1 THEN LEAST(rc.od, d.initod) ELSE 0 END) AS B1, SUM(CASE WHEN rgid=2 THEN LEAST(rc.od, d.initod) ELSE 0 END) AS B2,
+		SUM(CASE WHEN rgid=3 THEN LEAST(rc.od, d.initod) ELSE 0 END) AS B3, SUM(CASE WHEN rgid=4 THEN LEAST(rc.od, d.initod) ELSE 0 END) AS B4,
+		SUM(CASE WHEN rgid=5 THEN LEAST(rc.od, d.initod) ELSE 0 END) AS B5, SUM(CASE WHEN rgid >5 THEN LEAST(rc.od, d.initod) ELSE 0 END) AS B6,
+		SUM(CASE WHEN rgid=1 THEN LEAST(rc.od, d.initod) ELSE 0 END)*0.02+SUM(CASE WHEN rgid=2 THEN LEAST(rc.od, d.initod) ELSE 0 END)*0.04+SUM(CASE WHEN rgid=3 THEN LEAST(rc.od, d.initod) ELSE 0 END)*0.06+ SUM(CASE WHEN rgid=4 THEN LEAST(rc.od, d.initod) ELSE 0 END)*0.08+SUM(CASE WHEN rgid=5 THEN LEAST(rc.od, d.initod) ELSE 0 END)*0.08+SUM(CASE WHEN rgid >5 THEN LEAST(rc.od, d.initod) ELSE 0 END)*0.1 as Commission
+		, SUM(rc.cb) as cb, SUM(rc.penalty) as penalty,	SUM(rc.cb)*0.15 + SUM(rc.penalty)*0.1 as commission2
 		FROM ".$dbPrefix_curr.".tbxfieldrcvry d LEFT JOIN ".$dbPrefix.".tbmbroker b ON d.sraid = b.brkrid AND b.brkrtyp = 2
 		LEFT JOIN (
-		SELECT dealid,
-		IFNULL(SUM(CASE WHEN dctyp = 101 or dctyp = 102 or dctyp = 111 then ifnull(rcptamt,0) else 0 end),0) AS od,
-		IFNULL(SUM(CASE WHEN dctyp = 103 then ifnull(rcptamt,0) else 0 end),0) AS cb,
-		IFNULL(SUM(CASE WHEN dctyp = 104 then ifnull(rcptamt,0) else 0 end),0) AS penalty
-		FROM ".$dbPrefix_curr.".tbxdealrcpt r JOIN ".$dbPrefix_curr.".tbxdealrcptdtl rd ON r.rcptid = rd.rcptid AND r.cbflg = 0 AND r.cclflg = 0 AND r.rcptpaymode = 1
-		WHERE 1 $rcpt_clause GROUP BY r.dealid) rc ON d.dealid = rc.dealid WHERE 1 :mm :dd :reccentre :hpdt GROUP BY b.centre, sraid ",
+			SELECT dealid,
+			IFNULL(SUM(CASE WHEN dctyp = 101 or dctyp = 102 or dctyp = 111 then ifnull(rcptamt,0) else 0 end),0) AS od,
+			IFNULL(SUM(CASE WHEN dctyp = 103 then ifnull(rcptamt,0) else 0 end),0) AS cb,
+			IFNULL(SUM(CASE WHEN dctyp = 104 then ifnull(rcptamt,0) else 0 end),0) AS penalty
+			FROM ".$dbPrefix_curr.".tbxdealrcpt r JOIN ".$dbPrefix_curr.".tbxdealrcptdtl rd ON r.rcptid = rd.rcptid
+			AND r.cbflg = 0 AND r.cclflg = 0 AND r.rcptpaymode = 1
+			WHERE 1 $rcpt_clause GROUP BY r.dealid
+		) rc ON d.dealid = rc.dealid WHERE 1 :mm :dd :reccentre :state :hpdt GROUP BY b.centre, sraid ",
+
 		'columns' => array(
 			$c++ => array('align'=>-1, 'sort'=>1, 'ops'=> NULL, 'link'=> 0, 'stotal' => 0, 'name' => 'Centre'),
 			$c++ => array('align'=>-1, 'sort'=>1, 'ops'=> NULL, 'link'=> 0, 'stotal' => 2, 'name' => 'SRA Name'),
@@ -631,7 +694,7 @@ function generic(){
 			$c++ => array('align'=>1, 'sort'=>1, 'ops'=> 'nf', 'link'=> 0, 'stotal' => 1, 'name' => 'OTC(70% Rec)','style'=>'font-weight:bold;'),
 			$c++ => array('align'=>1, 'sort'=>1, 'ops'=> 'nf', 'link'=> 0, 'stotal' => 1, 'name' => 'Chq Bouncing'),
 			$c++ => array('align'=>1, 'sort'=>1, 'ops'=> 'nf', 'link'=> 0, 'stotal' => 1, 'name' => 'Penalty'),
-			$c++ => array('align'=>1, 'sort'=>1, 'ops'=> 'nf', 'link'=> 0, 'stotal' => 1, 'name' => 'Comission', 'style'=>'font-weight:bold;'),
+			$c++ => array('align'=>1, 'sort'=>1, 'ops'=> 'nf', 'link'=> 0, 'stotal' => 1, 'name' => 'Commission', 'style'=>'font-weight:bold;'),
 		),
 	);
 
@@ -640,10 +703,11 @@ function generic(){
 	$mm = isset($_REQUEST['mm']) ? $_REQUEST['mm'] : 0;
 	$rcpt_clause = $filters ['mm']['options'][$mm]['query1'];
 	$query[$qi] = array(
-		'title'=> 'EMI Recovery Report',
+		'title'=> 'EMI Recovery - Executive Wise',
 		'default_sort' => 'centre asc, brkrnm',
 		'default_sort_type' => 'asc',
-		'filters' => array('mm', 'dd', 'hpdt', 'reccentre'),
+		'filters' => array('mm', 'dd', 'hpdt', 'reccentre', 'state'),
+		'alternate' => array(array(9, 'Executive Wise'), array(30, 'Centre Wise'), array(31, 'Month Wise')),
 		'row_limit' => 100,
 		'q' => "SELECT tcase(b.centre) as centre, tcase(ifnull(b.brkrnm,'Uniassigned')) as brkrnm, SUM(ifnull(OdDueAmt,0)/EMI) AS Assigned, SUM(rc.amt/EMI) AS Recovered, (SUM(rc.amt/EMI)/SUM(OdDueAmt/EMI)*100) AS Percentage
 		, SUM(case when d.rgid = 1 then d.rgid else 0 end) as A1
@@ -660,7 +724,7 @@ function generic(){
 		, SUM(case when d.rgid > 5 then rc.amt/EMI else 0 end) as B6
 		FROM ".$dbPrefix_curr.".tbxfieldrcvry d LEFT JOIN ".$dbPrefix.".tbmbroker b ON d.sraid = b.brkrid AND b.brkrtyp = 2 :reccentre
 		LEFT JOIN (SELECT dealid, IFNULL(SUM(rcptamt),0) AS amt FROM ".$dbPrefix_curr.".tbxdealrcpt r JOIN ".$dbPrefix_curr.".tbxdealrcptdtl rd ON r.rcptid = rd.rcptid AND r.cbflg = 0 AND r.cclflg = 0 AND r.rcptpaymode = 1 AND (rd.dctyp = 101 OR rd.dctyp = 102 OR rd.dctyp = 111) WHERE 1 $rcpt_clause GROUP BY r.dealid) rc
-		ON d.dealid = rc.dealid WHERE 1 :mm :dd :hpdt GROUP BY b.centre, sraid ",
+		ON d.dealid = rc.dealid WHERE 1 :mm :dd :hpdt :state GROUP BY b.centre, sraid ",
 		'columns' => array(
 			$c++ => array('align'=>-1, 'sort'=>1, 'ops'=> NULL, 'link'=> 0, 'stotal' => 0, 'name' => 'Centre'),
 			$c++ => array('align'=>-1, 'sort'=>1, 'ops'=> NULL, 'link'=> 0, 'stotal' => 2, 'name' => 'SRA Name'),
@@ -688,10 +752,10 @@ function generic(){
 		'title'=> 'Vehicle - Details Not Updated',
 		'default_sort' => 'd.hpdt',
 		'default_sort_type' => 'asc',
-		'filters' => array('hpdt', 'centre', 'dealer', 'salesman', 'disbursed'),
+		'filters' => array('hpdt', 'centre', 'state' , 'dealer', 'salesman', 'disbursed'),
 		'q' => "SELECT sql_calc_found_rows d.dealno, d.hpdt, tcase(d.dealnm) as dealnm,  tcase(d.centre) as centre, DATE_ADD(d.bankduedt, INTERVAL -1 MONTH) AS disbursementdt, tcase(br.brkrnm) as brkrnm,tcase(s.salesmannm) as salesmannm, CONCAT(v.make, ' ',v.model) AS Vehicle, v.engineno, v.chasis, v.rtoregno
 		FROM $dbPrefix.tbmdeal d
-		JOIN $dbPrefix.tbadealsalesman a JOIN $dbPrefix.tbmsalesman s ON d.dealid = a.dealid AND a.salesmanid = s.salesmanid AND d.dealsts = 1 :hpdt :centre :salesman :disbursed
+		JOIN $dbPrefix.tbadealsalesman a JOIN $dbPrefix.tbmsalesman s ON d.dealid = a.dealid AND a.salesmanid = s.salesmanid AND d.dealsts = 1 :hpdt :centre :state :salesman :disbursed
 		LEFT JOIN $dbPrefix.tbmbroker br ON br.brkrid = d.brkrid
 		LEFT JOIN $dbPrefix.tbmdealvehicle v ON d.dealid = v.dealid
 		where 1 :dealer and (v.chasis ='NA' or v.engineno ='NA') ",
@@ -722,11 +786,11 @@ function generic(){
 		'title'=> 'Due List Report',
 		'default_sort' => 'hpdt',
 		'default_sort_type' => 'asc',
-		'filters' => array('mm','hpdt', 'centre', 'bouncingstatus', 'chduedt', 'rcptpaytype'),
+		'filters' => array('mm','hpdt', 'centre', 'state', 'bouncingstatus', 'chduedt', 'rcptpaytype'),
 		'row_limit' => 100,
 		'q' => "SELECT sql_calc_found_rows dealno, tcase(d.dealnm) as dealnm, d.hpdt, tcase(d.centre) as centre, d.period, dl.SrNo, dl.duedt, (dl.dueamt+dl.collectionchrgs) AS emi, concat(CASE r.rcptpaymode WHEN 2 THEN 'PDC' WHEN 6 THEN 'ECS' ELSE NULL END, ' (',CASE d.paytype WHEN 1 THEN 'PDC' WHEN 2 THEN 'ECS' WHEN 3 THEN 'NACH' ELSE NULL END,')') as mode, r.rcptdt, r.totrcptamt, CASE r.cbflg WHEN 0 THEN 'Cleared' WHEN -1 THEN 'Bounced' ELSE NULL END AS cbflg, ifnull( count(r.dealid),0)
 		FROM ".$dbPrefix.".tbmDeal d JOIN ".$dbPrefix.".tbmDueList dl
-		ON dl.DealId= d.DealID AND (d.DealSts = 1 OR (d.cancleflg = 0 $closedt_clause)) :hpdt :centre $duedt_clause :chduedt
+		ON dl.DealId= d.DealID AND (d.DealSts = 1 OR (d.cancleflg = 0 $closedt_clause)) :hpdt :centre :state $duedt_clause :chduedt
 		LEFT JOIN ".$dbPrefix_curr.".tbxdealrcpt r ON d.dealid = r.dealid AND (r.RcptPayMode = 2 OR r.RcptPayMode=6) $rcpt_clause where 1 :bouncingstatus :rcptpaytype group by d.dealid, r.dealid ",
 		'columns' => array(
 			$c++ => array('align'=>1, 'sort'=>1, 'ops'=> NULL, 'link'=> 1, 'stotal' => 0, 'name' => 'Deal No'),
@@ -751,10 +815,10 @@ function generic(){
 		'title'=> 'NOC Report',
 		'default_sort' => 'd.hpdt',
 		'default_sort_type' => 'asc',
-		'filters' => array('hpdt', 'centre', 'branch', 'status'),
+		'filters' => array('hpdt', 'centre', 'state', 'branch', 'status'),
 		'q' => "
 			SELECT sql_calc_found_rows d.dealno, tcase(d.dealnm) as dealnm, d.hpdt, CASE d.dealsts WHEN 1 THEN 'Active' WHEN 3 THEN 'Closed' ELSE d.dealsts END as status, tcase(d.centre) as centre, np.acxndt AS BankPaymentDt, dn.NocDate AS BankNOCDt, dn.NocNo AS BankNOCNo, cn.NOCDate AS CustomerNOCDt, cn.RtnDate, tcase(br.brkrnm) AS SRA, cn.SendDate, bank.brnch
-			FROM $dbPrefix.tbmdeal d JOIN $dbPrefix.tbadealnocpmnt np on d.dealid = np.dealid AND d.cancleflg = 0 :status :hpdt :centre
+			FROM $dbPrefix.tbmdeal d JOIN $dbPrefix.tbadealnocpmnt np on d.dealid = np.dealid AND d.cancleflg = 0 :status :hpdt :centre :state
 			JOIN (SELECT b.bankBrnchid, concat(s.banknm, ' - ', tcase(b.bankBrnchNm)) as brnch FROM $dbPrefix.tbmsourcebank s JOIN $dbPrefix.tbmsourcebankbrnch b ON s.bankid = b.bankid :branch ) bank
 			ON d.bankbrnchid = bank.bankbrnchid
 			LEFT JOIN $dbPrefix.tbadealnoc dn ON np.dealid = dn.dealid
@@ -789,7 +853,7 @@ function generic(){
 		CASE WHEN (TIMESTAMPDIFF(MONTH, bankduedt, DATE_ADD(NOW(), INTERVAL 3 DAY))+1) > period THEN period ELSE (TIMESTAMPDIFF(MONTH, bankduedt, DATE_ADD(NOW(), INTERVAL 3 DAY))+1) END AS EMIPending,
 		SUM(z.vcamt) AS posted,
 		pm.mthlyamt * CASE WHEN (TIMESTAMPDIFF(MONTH, bankduedt, DATE_ADD(NOW(), INTERVAL 3 DAY))+1) > period THEN period ELSE (TIMESTAMPDIFF(MONTH, bankduedt, DATE_ADD(NOW(), INTERVAL 3 DAY))+1) END AS tobeposted, bank.brnch
-		FROM $dbPrefix.tbmdeal d JOIN $dbPrefix.tbmpmntschd pm ON d.dealid = pm.dealid :hpdt :centre
+		FROM $dbPrefix.tbmdeal d JOIN $dbPrefix.tbmpmntschd pm ON d.dealid = pm.dealid :hpdt :centre :state
 		JOIN (SELECT b.bankBrnchid, concat(s.banknm, ' - ', tcase(b.bankBrnchNm)) as brnch FROM $dbPrefix.tbmsourcebank s JOIN $dbPrefix.tbmsourcebankbrnch b ON s.bankid = b.bankid :branch ) bank ON d.bankbrnchid = bank.bankbrnchid :branch
 		JOIN $dbPrefix.tbadealaccount a ON d.dealid = a.dealid AND a.dealactyp = 504 AND d.dealsts = 1 AND d.bankduedt IS NOT NULL
 		LEFT JOIN (".$q.") AS z ON a.acid = z.acid
@@ -803,7 +867,7 @@ function generic(){
 		'title'=> 'No Liability Posting',
 		'default_sort' => 'd.hpdt',
 		'default_sort_type' => 'desc',
-		'filters' => array('hpdt', 'centre', 'branch'),
+		'filters' => array('hpdt', 'centre', 'state', 'branch'),
 		'q' => $q1,
 		'columns' => array(
 			$c++ => array('align'=>1, 'sort'=>1, 'ops'=> NULL, 'link'=> 1, 'stotal' => 0, 'name' => 'Deal No',),
@@ -879,10 +943,10 @@ function generic(){
 		'title'=> 'Regular Recovery',
 		'default_sort' => 'dealno',
 		'default_sort_type' => 'asc',
-		'filters' => array('hpdt', 'centre'),
+		'filters' => array('hpdt', 'centre' ,'state'),
 		'row_limit' => 50,
 		'q' => "SELECT sql_calc_found_rows d.dealno, d.dealnm, d.hpdt, d.centre, dl.duedt, (dl.dueamt+dl.collectionchrgs) AS emi, r.rcptdt, r.totrcptamt, b.brkrnm AS SRA
-			FROM $dbPrefix.tbmdeal d JOIN $dbPrefix.tbmduelist dl ON d.dealid = dl.dealid :hpdt :centre
+			FROM $dbPrefix.tbmdeal d JOIN $dbPrefix.tbmduelist dl ON d.dealid = dl.dealid :hpdt :centre :state
 			JOIN $dbPrefix_curr.tbxdealrcpt r ON d.dealid = r.dealid AND r.rcptpaymode = 1 AND r.rcptdt = dl.duedt
 			JOIN $dbPrefix.tbmbroker b ON r.sraid = b.brkrid AND b.brkrtyp = 2
 			GROUP BY d.dealid, r.rcptdt ",
@@ -905,7 +969,7 @@ function generic(){
 		'title'=> 'Seized Vehicle Report',
 		'default_sort' => 'VhclSzDT',
 		'default_sort_type' => 'desc',
-		'filters' => array('seizemm','hpdt', 'centre', 'seizestatus'),
+		'filters' => array('seizemm','hpdt', 'centre', 'state', 'seizestatus'),
 		'row_limit' => 50,
 		'q' => "SELECT sql_calc_found_rows dealno, dealnm, hpdt, centre, model, status, VhclSzDT, VhclRlDt, tcase(GdwnNm) as godown, VhclSaleDt, SaleAmt,COUNT(dealid) as seizeCount
 		FROM
@@ -914,7 +978,7 @@ function generic(){
 		JOIN  $dbPrefix.tbmgdwn AS g ON g.GdwnId=seize.GdwnId :seizemm
 		LEFT JOIN  $dbPrefix_curr.tbxvhclrl AS rel ON seize.VhclSzRlId= rel.VhclSzRlId
 		LEFT JOIN  $dbPrefix_curr.tbxszvhclsale AS sale ON  seize.VhclSzRlId= sale.VhclSzRlId
-		JOIN $dbPrefix.tbmDeal AS d  ON d.DealId=seize.DealID :hpdt :centre
+		JOIN $dbPrefix.tbmDeal AS d  ON d.DealId=seize.DealID :hpdt :centre :state
 		JOIN $dbPrefix.tbmdealvehicle AS dv ON d.DealId=dv.DealID WHERE CclFlg = 0 ORDER BY seize.DealId,VhclSzDT DESC ) AS seize GROUP BY DealNo having 1 :seizestatus ",
 		'columns' => array(
 			$c++ => array('align'=>1, 'sort'=>1, 'ops'=> NULL, 'link'=> 1, 'stotal' => 0, 'name' => 'Deal No',),
@@ -944,15 +1008,15 @@ function generic(){
 		$q .= "
 		,SUM(CASE WHEN rcptdt BETWEEN '$startdt' AND '$enddt' THEN 1 ELSE 0 END) AS '$mn-t', SUM(CASE WHEN cbflg = -1 AND rcptdt BETWEEN '$startdt' AND '$enddt' THEN 1 ELSE 0 END) AS '$mn-b'";
 	}
-	$q .= " FROM $dbPrefix.tbmdeal d join $dbPrefix_curr.tbxdealrcpt r on d.dealid = r.dealid :hpdt :centre WHERE cclflg = 0 AND (rcptpaymode = 2 OR rcptpaymode = 6)
+	$q .= " FROM $dbPrefix.tbmdeal d join $dbPrefix_curr.tbxdealrcpt r on d.dealid = r.dealid :hpdt :centre :state WHERE cclflg = 0 AND (rcptpaymode = 2 OR rcptpaymode = 6)
 		GROUP BY DAY(rcptdt)";
 
 	$query[$qi] = array(
 		'title'=> 'Bouncing Report - Daywise',
 		'default_sort' => 'd',
 		'default_sort_type' => 'asc',
-		'filters' => array('hpdt', 'centre'),
-		'alternate' => array( array(18, 'Show Centrewise'),array(19, 'Show Executivewise')),
+		'filters' => array('hpdt', 'centre', 'state'),
+		'alternate' => array(array(17, 'Show Daywise'), array(18, 'Show Centrewise'),array(19, 'Show Executivewise')),
 		'row_limit' => 50,
 		'q' => $q,
 		'columns' => array(
@@ -980,15 +1044,15 @@ function generic(){
 		$q .= "
 		,SUM(CASE WHEN rcptdt BETWEEN '$startdt' AND '$enddt' THEN 1 ELSE 0 END) AS '$mn-t', SUM(CASE WHEN cbflg = -1 AND rcptdt BETWEEN '$startdt' AND '$enddt' THEN 1 ELSE 0 END) AS '$mn-b'";
 	}
-	$q .= " FROM $dbPrefix.tbmdeal d join $dbPrefix_curr.tbxdealrcpt r on d.dealid = r.dealid :hpdt WHERE cclflg = 0 AND (rcptpaymode = 2 OR rcptpaymode = 6)
-		GROUP BY centre having 1 :centre";
+	$q .= " FROM $dbPrefix.tbmdeal d join $dbPrefix_curr.tbxdealrcpt r on d.dealid = r.dealid :hpdt :state WHERE cclflg = 0 AND (rcptpaymode = 2 OR rcptpaymode = 6)
+		GROUP BY centre having 1 :centre ";
 
 	$query[$qi] = array(
 		'title'=> 'Bouncing Report - CentreWise',
 		'default_sort' => 'per',
 		'default_sort_type' => 'desc',
-		'filters' => array('hpdt', 'centre'),
-		'alternate' => array( array(17, 'Show Daywise'),array(19, 'Show Executivewise')),
+		'filters' => array('hpdt', 'centre', 'state'),
+		'alternate' => array(array(17, 'Show Daywise'), array(18, 'Show Centrewise'),array(19, 'Show Executivewise')),
 		'row_limit' => 50,
 		'q' => $q,
 		'columns' => array(
@@ -1016,18 +1080,18 @@ function generic(){
 		$q .= "
 		,SUM(CASE WHEN rcptdt BETWEEN '$startdt' AND '$enddt' THEN 1 ELSE 0 END) AS '$mn-t', SUM(CASE WHEN cbflg = -1 AND rcptdt BETWEEN '$startdt' AND '$enddt' THEN 1 ELSE 0 END) AS '$mn-b'";
 	}
-	$q .= " FROM $dbPrefix.tbmdeal d join $dbPrefix.tbadealsalesman sa on d.dealid = sa.dealid
+	$q .= " FROM $dbPrefix.tbmdeal d join $dbPrefix.tbadealsalesman sa on d.dealid = sa.dealid :hpdt :centre :state
 			JOIN $dbPrefix.tbmsalesman s ON s.salesmanid = sa.salesmanid
-			JOIN $dbPrefix_curr.tbxdealrcpt r ON d.dealid = r.dealid :hpdt WHERE cclflg = 0 AND (rcptpaymode = 2 OR rcptpaymode = 6)
+			JOIN $dbPrefix_curr.tbxdealrcpt r ON d.dealid = r.dealid  WHERE cclflg = 0 AND (rcptpaymode = 2 OR rcptpaymode = 6)
 		GROUP BY s.centre, s.salesmanid ";
 
 	$query[$qi] = array(
 		'title'=> 'Bouncing Report - Sales Executive Wise',
 		'default_sort' => 'per',
 		'default_sort_type' => 'desc',
-		'filters' => array('hpdt'),
-		'alternate' => array( array(17, 'Show Daywise'),array(18, 'Show Centewise')),
-		'row_limit' => 250,
+		'filters' => array('hpdt', 'centre', 'state'),
+		'alternate' => array(array(17, 'Show Daywise'), array(18, 'Show Centrewise'),array(19, 'Show Executivewise')),
+		'row_limit' => 200,
 		'q' => $q,
 		'columns' => array(
 			$c++ => array('align'=>-1, 'sort'=>0, 'ops'=> NULL, 'link'=> 0, 'stotal' => 2, 'name' => 'Centre',),
@@ -1050,10 +1114,10 @@ function generic(){
 		'title'=> 'Non-Starter Cases',
 		'default_sort' => 'startduedt asc, d.dealnm ',
 		'default_sort_type' => 'asc',
-		'filters' => array('hpdt', 'centre', 'bckt', 'rec_emi'),
+		'filters' => array('hpdt', 'centre','state' , 'bckt', 'rec_emi'),
 		'row_limit' => 200,
 		'q' => "SELECT SQL_CALC_FOUND_ROWS d.dealno, tcase(d.dealnm) as name, tcase(d.centre) as centre, d.hpdt, tbmdeal.startduedt, d.hpexpdt, d.oddueamt, d.rgid, round((ifnull(p.rcptamt,0)/EMI)) as rec_emi, tbmdeal.financeamt, d.model, tcase(s.salesmannm) as sexc, tcase(b.brkrnm) as rexe, p.rcptamt
-		FROM $dbPrefix.tbmdeal JOIN $dbPrefix_curr.tbxfieldrcvry d ON tbmdeal.dealid = d.dealid and tbmdeal.startduedt < DATE_ADD(NOW(), INTERVAL -1 MONTH) :hpdt :centre :bckt
+		FROM $dbPrefix.tbmdeal JOIN $dbPrefix_curr.tbxfieldrcvry d ON tbmdeal.dealid = d.dealid and tbmdeal.startduedt < DATE_ADD(NOW(), INTERVAL -1 MONTH) :hpdt :centre :state :bckt
 		LEFT JOIN
 			(SELECT rc.dealid, SUM(rc.rcptamt) AS rcptamt FROM (
 				SELECT '200809', r.dealid, SUM(r.totrcptamt) AS rcptamt FROM lksa200809.tbxdealrcpt r WHERE r.cclflg = 0 AND r.CBflg = 0 GROUP BY r.dealid
@@ -1095,58 +1159,9 @@ function generic(){
 		),
 	);
 
+
 	//index == 21
 	$c =0;$qi = 21;
-	$mm = isset($_REQUEST['mm']) ? $_REQUEST['mm'] : 0;
-	$rcpt_clause = $filters ['mm']['options'][$mm]['query1'];
-	$query[$qi] = array(
-		'title'=> 'Caller Commission',
-		'default_sort' => 'name',
-		'default_sort_type' => 'asc',
-		'filters' => array('mm', 'dd'),
-		'row_limit' => 100,
-		'q' => "SELECT tcase(ifnull(b.realname,'Unassigned')) as name,
-		count(d.dealid) as Assigned, sum(case when rc.od is not null or d.rec_flg = 1 then 1 else 0 end) as Recovered,
-		SUM(case when rc.od is not null or d.rec_flg = 1 then 1 else 0 end)/count(d.dealid)*100 as per,
-		SUM(rc.cb) as cb, SUM(rc.penalty) as penalty, SUM(rc.cb) + SUM(rc.penalty) as total, sum(rc.collection) as 	collection,
-		CASE WHEN SUM(rc.cb) + SUM(rc.penalty) > SUM(rc.collection)*0.07 then SUM(rc.cb) + SUM(rc.penalty) - SUM(rc.collection)*0.07 ELSE 0 END as Target,
-		CASE WHEN SUM(rc.cb) + SUM(rc.penalty) > SUM(rc.collection)*0.07 then (SUM(rc.cb) + SUM(rc.penalty))*0.07 ELSE 0 END as comission,
-		CASE WHEN SUM(case when rc.od is not null or d.rec_flg = 1 then 1 else 0 end)/count(d.dealid)*100 >= 95 THEN 6000
-			WHEN SUM(case when rc.od is not null or d.rec_flg = 1 then 1 else 0 end)/count(d.dealid)*100 >= 90 THEN 5500
-			WHEN SUM(case when rc.od is not null or d.rec_flg = 1 then 1 else 0 end)/count(d.dealid)*100 >= 85 THEN 5000
-			WHEN SUM(case when rc.od is not null or d.rec_flg = 1 then 1 else 0 end)/count(d.dealid)*100 >= 80 THEN 4500
-			WHEN SUM(case when rc.od is not null or d.rec_flg = 1 then 1 else 0 end)/count(d.dealid)*100 >= 75 THEN 4000
-			WHEN SUM(case when rc.od is not null or d.rec_flg = 1 then 1 else 0 end)/count(d.dealid)*100 >= 70 THEN 3500
-			WHEN SUM(case when rc.od is not null or d.rec_flg = 1 then 1 else 0 end)/count(d.dealid)*100 >= 65 THEN 3000
-			WHEN SUM(case when rc.od is not null or d.rec_flg = 1 then 1 else 0 end)/count(d.dealid)*100 >= 60 THEN 2500
-			WHEN SUM(case when rc.od is not null or d.rec_flg = 1 then 1 else 0 end)/count(d.dealid)*100 >= 55 THEN 2000
-			WHEN SUM(case when rc.od is not null or d.rec_flg = 1 then 1 else 0 end)/count(d.dealid)*100 >= 50 THEN 1500
-			ELSE 0 End as Incentive
-		FROM ".$dbPrefix_curr.".tbxfieldrcvry d LEFT JOIN ob_sa.tbmuser b ON d.callerid = b.userid
-		LEFT JOIN (
-		SELECT dealid,
-		IFNULL(SUM(rcptamt),0) AS collection,
-		IFNULL(SUM(CASE WHEN dctyp = 101 or dctyp = 102 or dctyp = 111 then ifnull(rcptamt,0) else 0 end),0) AS od,
-		IFNULL(SUM(CASE WHEN dctyp = 103 then ifnull(rcptamt,0) else 0 end),0) AS cb,
-		IFNULL(SUM(CASE WHEN dctyp = 104 then ifnull(rcptamt,0) else 0 end),0) AS penalty
-		FROM ".$dbPrefix_curr.".tbxdealrcpt r JOIN ".$dbPrefix_curr.".tbxdealrcptdtl rd ON r.rcptid = rd.rcptid AND r.cbflg = 0 AND r.cclflg = 0 AND r.rcptpaymode = 1
-		WHERE 1 $rcpt_clause GROUP BY r.dealid) rc ON d.dealid = rc.dealid WHERE 1 :mm :dd GROUP BY b.userid ",
-		'columns' => array(
-			$c++ => array('align'=>-1, 'sort'=>1, 'ops'=> NULL, 'link'=> 0, 'stotal' => 2, 'name' => 'Caller Name'),
-			$c++ => array('align'=>1, 'sort'=>1, 'ops'=> 'nf', 'link'=> 0, 'stotal' => 1, 'name' => 'Assigned'),
-			$c++ => array('align'=>1, 'sort'=>1, 'ops'=> 'nf', 'link'=> 0, 'stotal' => 1, 'name' => 'Recovered'),
-			$c++ => array('align'=>1, 'sort'=>1, 'ops'=> 'nf', 'link'=> 0, 'stotal' => 0, 'name' => '%', 'suffix'=>'%', 'style'=>'font-weight:bold;background-color:#F6F6F6'),
-			$c++ => array('align'=>1, 'sort'=>1, 'ops'=> 'nf', 'link'=> 0, 'stotal' => 1, 'name' => 'Chq Bouncing'),
-			$c++ => array('align'=>1, 'sort'=>1, 'ops'=> 'nf', 'link'=> 0, 'stotal' => 1, 'name' => 'Penalty'),
-			$c++ => array('align'=>1, 'sort'=>1, 'ops'=> 'nf', 'link'=> 0, 'stotal' => 1, 'name' => 'Total'),
-			$c++ => array('align'=>1, 'sort'=>1, 'ops'=> 'nf', 'link'=> 0, 'stotal' => 1, 'name' => 'Collection', 'style'=>'font-weight:bold'),
-			$c++ => array('align'=>1, 'sort'=>1, 'ops'=> 'nf', 'link'=> 0, 'stotal' => 1, 'name' => 'Excess PCB'),
-			$c++ => array('align'=>1, 'sort'=>1, 'ops'=> 'nf', 'link'=> 0, 'stotal' => 1, 'name' => 'PCB Comission', 'style'=>'font-weight:bold;'),
-			$c++ => array('align'=>1, 'sort'=>1, 'ops'=> 'nf', 'link'=> 0, 'stotal' => 1, 'name' => 'Incentive', 'style'=>'font-weight:bold;'),
-		),
-	);
-	//index == 22
-	$c =0;$qi = 22;
 	$mm = isset($_REQUEST['mm']) ? $_REQUEST['mm'] : 0;
 	$rcpt_clause = $filters ['mm']['options'][$mm]['query1'];
 	$query[$qi] = array(
@@ -1155,7 +1170,7 @@ function generic(){
 		'default_sort_type' => 'asc',
 		'filters' => array('centre', 'department', 'role'),
 		'row_limit' => 200,
-		'q' => "SELECT sql_calc_found_rows id, `name`, centre, mobile, department, role, designation, joiningdt, birthdt FROM $dbPrefix.tbmemployee d WHERE d.active = 1 :centre :department :role",
+		'q' => "SELECT sql_calc_found_rows id, `name`, centre, mobile, department, role, designation, joiningdt, birthdt FROM $dbPrefix.tbmemployee d WHERE d.active = 2 :centre :department :role",
 		'columns' => array(
 			$c++ => array('align'=>1, 'sort'=>0, 'ops'=> NULL, 'link'=> 0, 'stotal' => 0, 'name' => 'Employee Id'),
 			$c++ => array('align'=>-1, 'sort'=>1, 'ops'=> NULL, 'link'=> 0, 'stotal' => 2, 'name' => 'Name'),
@@ -1169,23 +1184,23 @@ function generic(){
 		),
 	);
 
-	//index == 23 // AND dl.duedt BETWEEN '".date('Y-m-d')."' AND '".date('Y-m').'-'.(date('d')+5)."'
-	$c =0;$qi = 23;
+	//index == 22 // AND dl.duedt BETWEEN '".date('Y-m-d')."' AND '".date('Y-m').'-'.(date('d')+5)."'
+	$c =0;$qi = 22;
 	$mm = isset($_REQUEST['mm']) ? $_REQUEST['mm'] : 0;
 	$rcpt_clause = $filters ['mm']['options'][$mm]['query1'];
 	$query[$qi] = array(
 		'title'=> 'Due Date List',
 		'default_sort' => 'duedt asc, dealno',
 		'default_sort_type' => 'asc',
-		'filters' => array('hpdt','centre', 'duedt', 'paytype', 'bucket'),
+		'filters' => array('hpdt','centre', 'state', 'duedt', 'paytype', 'bucket'),
 		'row_limit' => 100,
 		'q' => "
-			SELECT sql_calc_found_rows d.dealno, tcase(d.dealnm) AS dealnm, tcase(d.centre) AS centre, d.city, d.hpdt, dl.duedt, TRIM(CONCAT(d.mobile1,' ' ,d.mobile2,' ', d.phone1,' ', d.phone2) as phone, case d.paytype when 1 then 'PDC' when 2 then 'ECS' when 3 then 'Direct Debit' ELSE 'Nothing' End as rcptpaymode,
+			SELECT sql_calc_found_rows d.dealno, tcase(d.dealnm) AS dealnm, tcase(d.centre) AS centre, d.city, d.hpdt, dl.duedt, TRIM(CONCAT(d.mobile,' ' ,d.mobile2,' ', d.tel1,' ', d.tel2)) as phone, case d.paytype when 1 then 'PDC' when 2 then 'ECS' when 3 then 'Direct Debit' ELSE 'Nothing' End as rcptpaymode,
 			pt.drownon, pt.place,
 			dl.dueamt + dl.collectionchrgs AS emi, tbxfieldrcvry.rgid, tbxfieldrcvry.OdDueAmt, tbxfieldrcvry.DueAmt, (d.period - dl.srno + 1) AS PendingTenure
-			FROM lksa.tbmdeal d JOIN lksa.tbmduelist dl ON d.dealid = dl.dealid AND d.dealsts = 1 AND dl.duedt between '".date('Y-m-01')."' and '".date('Y-m-t')."' :centre :duedt :hpdt
+			FROM lksa.tbmdeal d JOIN lksa.tbmduelist dl ON d.dealid = dl.dealid AND d.dealsts = 1 AND dl.duedt between '".date('Y-m-01')."' and '".date('Y-m-t')."' :centre :state :duedt :hpdt
 			LEFT JOIN lksa.tbmpaytype pt ON d.dealid = pt.dealid AND d.paytype = pt.paytype
-			LEFT JOIN lksa201516.tbxfieldrcvry ON tbxfieldrcvry.dealid = d.dealid AND tbxfieldrcvry.mm = ".date('m')." where  1 :paytype :bucket ",
+			LEFT JOIN ".$dbPrefix_curr.".tbxfieldrcvry ON tbxfieldrcvry.dealid = d.dealid AND tbxfieldrcvry.mm = ".date('m')." where  1 :paytype :bucket ",
 		'columns' => array(
 			$c++ => array('align'=>1, 'sort'=>0, 'ops'=> NULL, 'link'=> 1, 'stotal' => 0, 'name' => 'Deal No',),
 			$c++ => array('align'=>-1, 'sort'=>0, 'ops'=> NULL, 'link'=> 1, 'stotal' => 2, 'name' => 'Customer Name',),
@@ -1205,7 +1220,461 @@ function generic(){
 		),
 	);
 
+	if(isset($_SESSION['is_admin_login']) && $_SESSION['is_admin_login']){
+	//index == 23
+	//LEFT JOIN lksa.tbmemployee e ON e.oldid = d.callerid
+	//LEFT JOIN ".$dbPrefix_curr.".tbxempscheme sh ON e.id = sh.empid :mm
+	//CASE WHEN SUM(rc.cb) + SUM(rc.penalty) > SUM(rc.collection)*0.07 then SUM(rc.cb) + SUM(rc.penalty) - SUM(rc.collection)*0.07 ELSE 0 END as Target,
+	$c =0;$qi = 23;
+	$mm = isset($_REQUEST['mm']) ? $_REQUEST['mm'] : 0;
+	$rcpt_clause = $filters ['mm']['options'][$mm]['query1'];
+	$query[$qi] = array(
+		'title'=> 'Caller Commission',
+		'default_sort' => 'name',
+		'default_sort_type' => 'asc',
+		'alternate' => array(array(23, 'Caller Commission'), array(8, 'SRA Commission'),),
+		'filters' => array('mm', 'dd'),
+		'row_limit' => 100,
+		'q' => "SELECT tcase(IFNULL(realname,' Unassigned')) AS NAME, Assigned, Recovered, Recovered/Assigned *100 AS per, cb, penalty, cb+penalty AS total, collection, (cb + penalty)*0.06 AS commission,
+		sra_hra,
+		CASE WHEN sra_hra = 1 then I1 When sra_hra = 2 THEN I2 WHEN sra_hra = 3 THEN I3 WHEN sra_hra = 4 THEN I4 ELSE 0 END as incentive,
+		CASE WHEN sra_hra = 1 then I1 When sra_hra = 2 THEN I2 WHEN sra_hra = 3 THEN I3 WHEN sra_hra = 4 THEN I4 ELSE 0 END + (cb + penalty)*0.06 as final
+		FROM
+		(SELECT b.realname, b.sra_hra,
+		COUNT(d.dealid) AS Assigned, SUM(CASE WHEN rc.od IS NOT NULL OR d.rec_flg = 1 THEN 1 ELSE 0 END) AS Recovered,
+		SUM(rc.cb) AS cb, SUM(rc.penalty) AS penalty, SUM(rc.collection) AS collection,
+		CASE WHEN SUM(CASE WHEN rc.od IS NOT NULL OR d.rec_flg = 1 THEN 1 ELSE 0 END)/COUNT(d.dealid)*100 >= 95 THEN 8000
+			WHEN SUM(CASE WHEN rc.od IS NOT NULL OR d.rec_flg = 1 THEN 1 ELSE 0 END)/COUNT(d.dealid)*100 >= 90 THEN 7000
+			WHEN SUM(CASE WHEN rc.od IS NOT NULL OR d.rec_flg = 1 THEN 1 ELSE 0 END)/COUNT(d.dealid)*100 >= 85 THEN 6000
+			WHEN SUM(CASE WHEN rc.od IS NOT NULL OR d.rec_flg = 1 THEN 1 ELSE 0 END)/COUNT(d.dealid)*100 >= 80 THEN 5000
+			WHEN SUM(CASE WHEN rc.od IS NOT NULL OR d.rec_flg = 1 THEN 1 ELSE 0 END)/COUNT(d.dealid)*100 >= 75 THEN 4000
+			WHEN SUM(CASE WHEN rc.od IS NOT NULL OR d.rec_flg = 1 THEN 1 ELSE 0 END)/COUNT(d.dealid)*100 >= 70 THEN 3000
+			ELSE 0
+		END AS I1,
+		CASE WHEN SUM(CASE WHEN rc.od IS NOT NULL OR d.rec_flg = 1 THEN 1 ELSE 0 END)/COUNT(d.dealid)*100 >= 95 THEN 10000
+			WHEN SUM(CASE WHEN rc.od IS NOT NULL OR d.rec_flg = 1 THEN 1 ELSE 0 END)/COUNT(d.dealid)*100 >= 90 THEN 9000
+			WHEN SUM(CASE WHEN rc.od IS NOT NULL OR d.rec_flg = 1 THEN 1 ELSE 0 END)/COUNT(d.dealid)*100 >= 85 THEN 8000
+			WHEN SUM(CASE WHEN rc.od IS NOT NULL OR d.rec_flg = 1 THEN 1 ELSE 0 END)/COUNT(d.dealid)*100 >= 80 THEN 7000
+			WHEN SUM(CASE WHEN rc.od IS NOT NULL OR d.rec_flg = 1 THEN 1 ELSE 0 END)/COUNT(d.dealid)*100 >= 75 THEN 6000
+			WHEN SUM(CASE WHEN rc.od IS NOT NULL OR d.rec_flg = 1 THEN 1 ELSE 0 END)/COUNT(d.dealid)*100 >= 70 THEN 5000
+			WHEN SUM(CASE WHEN rc.od IS NOT NULL OR d.rec_flg = 1 THEN 1 ELSE 0 END)/COUNT(d.dealid)*100 >= 65 THEN 4000
+			WHEN SUM(CASE WHEN rc.od IS NOT NULL OR d.rec_flg = 1 THEN 1 ELSE 0 END)/COUNT(d.dealid)*100 >= 60 THEN 3500
+			WHEN SUM(CASE WHEN rc.od IS NOT NULL OR d.rec_flg = 1 THEN 1 ELSE 0 END)/COUNT(d.dealid)*100 >= 55 THEN 3000
+			ELSE 0
+		END AS I2,
+		CASE WHEN SUM(CASE WHEN rc.od IS NOT NULL OR d.rec_flg = 1 THEN 1 ELSE 0 END)/COUNT(d.dealid)*100 >= 75 THEN 11000
+			WHEN SUM(CASE WHEN rc.od IS NOT NULL OR d.rec_flg = 1 THEN 1 ELSE 0 END)/COUNT(d.dealid)*100 >= 70 THEN 10000
+			WHEN SUM(CASE WHEN rc.od IS NOT NULL OR d.rec_flg = 1 THEN 1 ELSE 0 END)/COUNT(d.dealid)*100 >= 65 THEN 9000
+			WHEN SUM(CASE WHEN rc.od IS NOT NULL OR d.rec_flg = 1 THEN 1 ELSE 0 END)/COUNT(d.dealid)*100 >= 60 THEN 8000
+			WHEN SUM(CASE WHEN rc.od IS NOT NULL OR d.rec_flg = 1 THEN 1 ELSE 0 END)/COUNT(d.dealid)*100 >= 55 THEN 7000
+			WHEN SUM(CASE WHEN rc.od IS NOT NULL OR d.rec_flg = 1 THEN 1 ELSE 0 END)/COUNT(d.dealid)*100 >= 50 THEN 6000
+			WHEN SUM(CASE WHEN rc.od IS NOT NULL OR d.rec_flg = 1 THEN 1 ELSE 0 END)/COUNT(d.dealid)*100 >= 45 THEN 5000
+			WHEN SUM(CASE WHEN rc.od IS NOT NULL OR d.rec_flg = 1 THEN 1 ELSE 0 END)/COUNT(d.dealid)*100 >= 40 THEN 4000
+			WHEN SUM(CASE WHEN rc.od IS NOT NULL OR d.rec_flg = 1 THEN 1 ELSE 0 END)/COUNT(d.dealid)*100 >= 35 THEN 3500
+			WHEN SUM(CASE WHEN rc.od IS NOT NULL OR d.rec_flg = 1 THEN 1 ELSE 0 END)/COUNT(d.dealid)*100 >= 30 THEN 3000
+			ELSE 0
+		END AS I3,
+		CASE WHEN SUM(CASE WHEN rc.od IS NOT NULL OR d.rec_flg = 1 THEN 1 ELSE 0 END)/COUNT(d.dealid)*100 >= 95 THEN 10000
+			WHEN SUM(CASE WHEN rc.od IS NOT NULL OR d.rec_flg = 1 THEN 1 ELSE 0 END)/COUNT(d.dealid)*100 >= 90 THEN 9000
+			WHEN SUM(CASE WHEN rc.od IS NOT NULL OR d.rec_flg = 1 THEN 1 ELSE 0 END)/COUNT(d.dealid)*100 >= 85 THEN 8000
+			WHEN SUM(CASE WHEN rc.od IS NOT NULL OR d.rec_flg = 1 THEN 1 ELSE 0 END)/COUNT(d.dealid)*100 >= 80 THEN 7000
+			WHEN SUM(CASE WHEN rc.od IS NOT NULL OR d.rec_flg = 1 THEN 1 ELSE 0 END)/COUNT(d.dealid)*100 >= 75 THEN 6000
+			WHEN SUM(CASE WHEN rc.od IS NOT NULL OR d.rec_flg = 1 THEN 1 ELSE 0 END)/COUNT(d.dealid)*100 >= 70 THEN 5000
+			WHEN SUM(CASE WHEN rc.od IS NOT NULL OR d.rec_flg = 1 THEN 1 ELSE 0 END)/COUNT(d.dealid)*100 >= 65 THEN 4500
+			WHEN SUM(CASE WHEN rc.od IS NOT NULL OR d.rec_flg = 1 THEN 1 ELSE 0 END)/COUNT(d.dealid)*100 >= 60 THEN 4000
+			WHEN SUM(CASE WHEN rc.od IS NOT NULL OR d.rec_flg = 1 THEN 1 ELSE 0 END)/COUNT(d.dealid)*100 >= 55 THEN 3500
+			WHEN SUM(CASE WHEN rc.od IS NOT NULL OR d.rec_flg = 1 THEN 1 ELSE 0 END)/COUNT(d.dealid)*100 >= 50 THEN 3000
+			ELSE 0
+		END AS I4
+		FROM ".$dbPrefix_curr.".tbxfieldrcvry d
+		LEFT JOIN ob_sa.tbmuser b ON d.callerid = b.userid
+		LEFT JOIN (
+		SELECT dealid,
+		IFNULL(SUM(rcptamt),0) AS collection,
+		IFNULL(SUM(CASE WHEN dctyp = 101 or dctyp = 102 or dctyp = 111 then ifnull(rcptamt,0) else 0 end),0) AS od,
+		IFNULL(SUM(CASE WHEN dctyp = 103 then ifnull(rcptamt,0) else 0 end),0) AS cb,
+		IFNULL(SUM(CASE WHEN dctyp = 104 then ifnull(rcptamt,0) else 0 end),0) AS penalty
+		FROM ".$dbPrefix_curr.".tbxdealrcpt r JOIN ".$dbPrefix_curr.".tbxdealrcptdtl rd ON r.rcptid = rd.rcptid AND r.cbflg = 0 AND r.cclflg = 0 AND r.rcptpaymode = 1
+		WHERE 1 $rcpt_clause GROUP BY r.dealid) rc ON d.dealid = rc.dealid WHERE 1 :mm :dd GROUP BY b.userid ) ee ",
+		'columns' => array(
+			$c++ => array('align'=>-1, 'sort'=>1, 'ops'=> NULL, 'link'=> 0, 'stotal' => 2, 'name' => 'Caller Name'),
+			$c++ => array('align'=>1, 'sort'=>1, 'ops'=> 'nf', 'link'=> 0, 'stotal' => 1, 'name' => 'Assigned'),
+			$c++ => array('align'=>1, 'sort'=>1, 'ops'=> 'nf', 'link'=> 0, 'stotal' => 1, 'name' => 'Recovered'),
+			$c++ => array('align'=>1, 'sort'=>1, 'ops'=> 'nf', 'link'=> 0, 'stotal' => 0, 'name' => '%', 'suffix'=>'%', 'style'=>'font-weight:bold;background-color:#F6F6F6'),
+			$c++ => array('align'=>1, 'sort'=>1, 'ops'=> 'nf', 'link'=> 0, 'stotal' => 1, 'name' => 'Chq Bouncing'),
+			$c++ => array('align'=>1, 'sort'=>1, 'ops'=> 'nf', 'link'=> 0, 'stotal' => 1, 'name' => 'Penalty'),
+			$c++ => array('align'=>1, 'sort'=>1, 'ops'=> 'nf', 'link'=> 0, 'stotal' => 1, 'name' => 'Total'),
+			$c++ => array('align'=>1, 'sort'=>1, 'ops'=> 'nf', 'link'=> 0, 'stotal' => 1, 'name' => 'Collection', 'style'=>'font-weight:bold'),
+			$c++ => array('align'=>1, 'sort'=>1, 'ops'=> 'nf', 'link'=> 0, 'stotal' => 1, 'name' => 'PCB Commission', 'style'=>'font-weight:bold;'),
+			$c++ => array('align'=>0, 'sort'=>1, 'ops'=> NULL, 'link'=> 0, 'stotal' => 0, 'name' => 'Scheme'),
+/*			$c++ => array('align'=>1, 'sort'=>1, 'ops'=> 'nf', 'link'=> 0, 'stotal' => 1, 'name' => 'I1',),
+			$c++ => array('align'=>1, 'sort'=>1, 'ops'=> 'nf', 'link'=> 0, 'stotal' => 1, 'name' => 'I2',),
+			$c++ => array('align'=>1, 'sort'=>1, 'ops'=> 'nf', 'link'=> 0, 'stotal' => 1, 'name' => 'I3',),
+			$c++ => array('align'=>1, 'sort'=>1, 'ops'=> 'nf', 'link'=> 0, 'stotal' => 1, 'name' => 'I4',),
+*/			$c++ => array('align'=>1, 'sort'=>1, 'ops'=> 'nf', 'link'=> 0, 'stotal' => 1, 'name' => 'Incentive',),
+			$c++ => array('align'=>1, 'sort'=>1, 'ops'=> 'nf', 'link'=> 0, 'stotal' => 1, 'name' => 'Total',),
+		),
+	);
+	}
 
+	if(isset($_SESSION['is_admin_login']) && $_SESSION['is_admin_login']){
+	//index == 24
+	$c =0;$qi = 24;
+	$mm = isset($_REQUEST['mm']) ? $_REQUEST['mm'] : 0;
+	$acxndt_clause = str_replace('rcptdt' , 'acxndt', $filters ['mm']['options'][$mm]['query1']);
+	$query[$qi] = array(
+		'title'=> 'Bank Repayment Report',
+		'alternate' => array(array(24, 'Bank Repayments'), array(25, 'Customer Repayments')),
+		'default_sort' => 'AcxnDt',
+		'default_sort_type' => 'asc',
+		'filters' => array('mm', 'hpdt','centre', 'state', 'branch'),
+		'row_limit' => 100,
+		'q' => "
+		SELECT v.AcxnDt, SUM(CASE WHEN b.bankid = 1 THEN 1 ELSE 0 END) AS NNSBDeals, SUM(CASE WHEN b.bankid = 1 THEN v.AcxnAmt ELSE 0 END) AS NNSB,
+		SUM(CASE WHEN b.bankid = 100001021 THEN 1 ELSE 0 END) AS BUCSDeals, SUM(CASE WHEN b.bankid = 100001021 THEN v.AcxnAmt ELSE 0 END) AS BUCS,
+		count(d.dealid) as dealcount, SUM(v.AcxnAmt) as total
+		FROM lksa.tbmDeal d JOIN lksa.tbaDealAccount da ON d.DealID = da.DealID AND da.DealAcTyp=504 :hpdt :centre :state
+		JOIN (SELECT bank.bankid, bank.banknm, branch.bankbrnchnm, branch.bankbrnchid FROM lksa.tbmsourcebank bank JOIN lksa.tbmsourcebankbrnch branch ON bank.bankid = branch.bankid :branch) AS b
+		ON d.bankbrnchid = b.bankbrnchid
+		JOIN ".$dbPrefix_curr.".tbxAcVoucher v ON v.AcID = da.AcId AND AcVchTyp = 1401 $acxndt_clause
+		GROUP BY  v.AcxnDt ",
+		'columns' => array(
+			$c++ => array('align'=>0, 'sort'=>0, 'ops'=> 'df', 'link'=> 0, 'stotal' => 2, 'name' => 'Repayment Dt',),
+			$c++ => array('align'=>1, 'sort'=>0, 'ops'=> 'nf', 'link'=> 0, 'stotal' => 1, 'name' => 'NNSB-Deals', ),
+			$c++ => array('align'=>1, 'sort'=>0, 'ops'=> 'nf', 'link'=> 0, 'stotal' => 1, 'name' => 'Repayments','cummulative'=>1),
+			$c++ => array('align'=>1, 'sort'=>0, 'ops'=> 'nf', 'link'=> 0, 'stotal' => 1, 'name' => 'BUCS-Deals',),
+			$c++ => array('align'=>1, 'sort'=>0, 'ops'=> 'nf', 'link'=> 0, 'stotal' => 1, 'name' => 'Repayments','cummulative'=>1),
+			$c++ => array('align'=>1, 'sort'=>0, 'ops'=> 'nf', 'link'=> 0, 'stotal' => 1, 'name' => 'Deals',),
+			$c++ => array('align'=>1, 'sort'=>0, 'ops'=> 'nf', 'link'=> 0, 'stotal' => 1, 'name' => 'Amount','cummulative'=>1),
+		),
+	);
+	}
+
+	if($_SESSION['is_admin_login']){
+	//index == 25
+	$c =0;$qi = 25;
+	$mm = isset($_REQUEST['mm']) ? $_REQUEST['mm'] : 0;
+	$rcpt_clause = $filters ['mm']['options'][$mm]['query1'];
+	$query[$qi] = array(
+		'title'=> 'Customer Repayment Report',
+		'alternate' => array(array(24, 'Bank Repayments'), array(25, 'Customer Repayments')),
+		'default_sort' => 'rcptdt',
+		'default_sort_type' => 'asc',
+		'filters' => array('mm', 'hpdt','centre', 'state', 'branch'),
+		'row_limit' => 100,
+		'q' => "SELECT r.rcptdt, SUM(CASE WHEN r.rcptpaymode = 1 THEN rd.rcptamt ELSE 0 END) AS Cash,
+		SUM(CASE WHEN r.rcptpaymode = 6 THEN rd.rcptamt ELSE 0 END) AS ECS,
+		SUM(CASE WHEN r.rcptpaymode = 2 THEN rd.rcptamt ELSE 0 END) AS PDC,
+		SUM(rd.rcptamt) as total
+		FROM lksa.tbmdeal d JOIN ".$dbPrefix_curr.".tbxdealrcpt r ON d.dealid = r.dealid :hpdt :centre :state
+		JOIN ".$dbPrefix_curr.".tbxdealrcptdtl rd ON r.rcptid = rd.rcptid AND r.cbflg = 0 AND r.cclflg = 0 AND r.rcptpaymode IN (1,2,6) $rcpt_clause
+		GROUP BY r.rcptdt",
+		'columns' => array(
+			$c++ => array('align'=>0, 'sort'=>0, 'ops'=> 'df', 'link'=> 0, 'stotal' => 2, 'name' => 'Receipt Dt',),
+			$c++ => array('align'=>1, 'sort'=>0, 'ops'=> 'nf', 'link'=> 0, 'stotal' => 1, 'name' => 'Cash','cummulative'=>1),
+			$c++ => array('align'=>1, 'sort'=>0, 'ops'=> 'nf', 'link'=> 0, 'stotal' => 1, 'name' => 'ECS','cummulative'=>1),
+			$c++ => array('align'=>1, 'sort'=>0, 'ops'=> 'nf', 'link'=> 0, 'stotal' => 1, 'name' => 'PDC','cummulative'=>1),
+			$c++ => array('align'=>1, 'sort'=>0, 'ops'=> 'nf', 'link'=> 0, 'stotal' => 1, 'name' => 'Total','cummulative'=>1),
+		),
+	);
+	}
+
+	if($_SESSION['is_admin_login']){
+	//index == 26
+	$c =0;$qi = 26;
+	$query[$qi] = array(
+		'title'=> 'Monthly Total Cash Collection',
+		'alternate' => array(array(26, 'Total Cash Collection'), array(27, 'Recovery Cash Collection')),
+		'default_sort' => 'mnth',
+		'default_sort_type' => 'asc',
+		'filters' => array('hpdt','centre', 'state'),
+		'row_limit' => 100,
+		'q' => "SELECT MONTH(rcptdt) as mnth, COUNT(DISTINCT r.dealid) AS deals , SUM(rd.rcptamt) AS Total,
+			SUM(CASE WHEN rd.dctyp = 101 OR rd.dctyp = 102 OR rd.dctyp = 111 THEN rd.rcptamt ELSE 0 END) AS EMI,
+			SUM(CASE WHEN rd.dctyp = 103 THEN rd.rcptamt ELSE 0 END) AS Bouncing,
+			SUM(CASE WHEN rd.dctyp = 104 THEN rd.rcptamt ELSE 0 END) AS Penalty,
+			SUM(CASE WHEN rd.dctyp = 105 THEN rd.rcptamt ELSE 0 END) AS Seizing,
+			SUM(CASE WHEN rd.dctyp = 107 THEN rd.rcptamt ELSE 0 END) AS Other
+			FROM lksa.tbmdeal d JOIN ".$dbPrefix_curr.".tbxdealrcpt r ON d.dealid = r.dealid :hpdt :centre :state
+			JOIN ".$dbPrefix_curr.".tbxdealrcptdtl rd ON rd.rcptid = r.rcptid AND r.rcptpaymode = 1 AND r.cclflg = 0 AND r.cbflg = 0
+			GROUP BY MONTH(rcptdt) ",
+		'columns' => array(
+			$c++ => array('align'=>-1, 'sort'=>0, 'ops'=> 'toMonthName', 'link'=> 0, 'stotal' => 2, 'name' => 'Month'),
+			$c++ => array('align'=>1, 'sort'=>0, 'ops'=> 'nf', 'link'=> 0, 'stotal' => 1, 'name' => 'Deals'),
+			$c++ => array('align'=>1, 'sort'=>0, 'ops'=> 'nf', 'link'=> 0, 'stotal' => 1, 'name' => 'Total','style'=>'background-color:#F5F5DC'),
+			$c++ => array('align'=>1, 'sort'=>0, 'ops'=> 'nf', 'link'=> 0, 'stotal' => 1, 'name' => 'EMI',),
+			$c++ => array('align'=>1, 'sort'=>0, 'ops'=> 'nf', 'link'=> 0, 'stotal' => 1, 'name' => 'Bouncing',),
+			$c++ => array('align'=>1, 'sort'=>0, 'ops'=> 'nf', 'link'=> 0, 'stotal' => 1, 'name' => 'Penalty'),
+			$c++ => array('align'=>1, 'sort'=>0, 'ops'=> 'nf', 'link'=> 0, 'stotal' => 1, 'name' => 'Seizing'),
+			$c++ => array('align'=>1, 'sort'=>0, 'ops'=> 'nf', 'link'=> 0, 'stotal' => 1, 'name' => 'Oter'),
+		),
+	);
+	}
+
+	if($_SESSION['is_admin_login']){
+	//index == 27
+	$c =0;$qi = 27;
+	$query[$qi] = array(
+		'title'=> 'Monthly Recovery Cash Collection',
+		'alternate' => array(array(26, 'Total Cash Collection'), array(27, 'Recovery Cash Collection')),
+		'default_sort' => 'mnth asc, rgid ',
+		'default_sort_type' => 'asc',
+		'filters' => array('hpdt','centre', 'state', 'bckt'),
+		'row_limit' => 100,
+		'q' => "SELECT MONTH(rcptdt) AS Mnth, d.rgid, COUNT(DISTINCT r.dealid) AS deals, SUM(rd.rcptamt) AS Total,
+			SUM(CASE WHEN rd.dctyp = 101 OR rd.dctyp = 102 OR rd.dctyp = 111 THEN rd.rcptamt ELSE 0 END) AS EMI,
+			SUM(CASE WHEN rd.dctyp = 103 THEN rd.rcptamt ELSE 0 END) AS Bouncing,
+			SUM(CASE WHEN rd.dctyp = 104 THEN rd.rcptamt ELSE 0 END) AS Penalty,
+			SUM(CASE WHEN rd.dctyp = 105 THEN rd.rcptamt ELSE 0 END) AS Seizing,
+			SUM(CASE WHEN rd.dctyp = 107 THEN rd.rcptamt ELSE 0 END) AS Other
+			 FROM
+			$dbPrefix_curr.tbxfieldrcvry d JOIN $dbPrefix_curr.tbxdealrcpt r ON d.dealid = r.dealid :hpdt :centre :bckt :state
+			AND r.rcptpaymode = 1 AND r.cclflg = 0 AND r.cbflg = 0 AND d.mm = MONTH(r.rcptdt)
+			JOIN $dbPrefix_curr.tbxdealrcptdtl rd ON rd.rcptid = r.rcptid GROUP BY
+			MONTH(r.rcptdt), d.rgid ",
+		'columns' => array(
+			$c++ => array('align'=>-1, 'sort'=>0, 'ops'=> 'toMonthName', 'link'=> 0, 'stotal' => 2, 'name' => 'Month'),
+			$c++ => array('align'=>0, 'sort'=>0, 'ops'=> 'nf', 'link'=> 0, 'stotal' => 0, 'name' => 'Bucket'),
+			$c++ => array('align'=>1, 'sort'=>0, 'ops'=> 'nf', 'link'=> 0, 'stotal' => 1, 'name' => 'Deals'),
+			$c++ => array('align'=>1, 'sort'=>0, 'ops'=> 'nf', 'link'=> 0, 'stotal' => 1, 'name' => 'Total','style'=>'background-color:#F5F5DC'),
+			$c++ => array('align'=>1, 'sort'=>0, 'ops'=> 'nf', 'link'=> 0, 'stotal' => 1, 'name' => 'EMI',),
+			$c++ => array('align'=>1, 'sort'=>0, 'ops'=> 'nf', 'link'=> 0, 'stotal' => 1, 'name' => 'Bouncing',),
+			$c++ => array('align'=>1, 'sort'=>0, 'ops'=> 'nf', 'link'=> 0, 'stotal' => 1, 'name' => 'Penalty'),
+			$c++ => array('align'=>1, 'sort'=>0, 'ops'=> 'nf', 'link'=> 0, 'stotal' => 1, 'name' => 'Seizing'),
+			$c++ => array('align'=>1, 'sort'=>0, 'ops'=> 'nf', 'link'=> 0, 'stotal' => 1, 'name' => 'Other'),
+		),
+	);
+	}
+
+
+	//index == 28
+	$c =0;$qi = 28;
+	$mm = isset($_REQUEST['mm']) ? $_REQUEST['mm'] : 0;
+	$rcpt_clause = $filters ['mm']['options'][$mm]['query1'];
+	$query[$qi] = array(
+		'title'=> 'Cash Receipts',
+		'default_sort' => 'rcptdt DESC, rcptid ',
+		'default_sort_type' => 'desc',
+		'filters' => array('mm', 'hpdt','centre', 'state', 'bucket', 'caller', 'sra'),
+		'row_limit' => 50,
+		'q' => "SELECT sql_calc_found_rows d.dealno, tcase(d.dealnm) as customer, tcase(d.centre) as centre, tbxfieldrcvry.EMI, rt.rcptdt, b1.brkrnm, rt.EMI as OD, rt.Bouncing, rt.Penalty, rt.Seizing, rt.Other, tbxfieldrcvry.rgid, b2.brkrnm as assignedsra, u.realname FROM
+			(SELECT r.rcptid, r.rcptdt, dealid, sraid,
+			SUM(CASE WHEN rd.dctyp IN (101,102,111) THEN rd.rcptamt ELSE 0 END) AS EMI,
+			SUM(CASE WHEN rd.dctyp = 103 THEN rd.rcptamt ELSE 0 END) AS Bouncing,
+			SUM(CASE WHEN rd.dctyp = 104 THEN rd.rcptamt ELSE 0 END) AS Penalty,
+			SUM(CASE WHEN rd.dctyp = 105 THEN rd.rcptamt ELSE 0 END) AS Seizing,
+			SUM(CASE WHEN rd.dctyp = 107 THEN rd.rcptamt ELSE 0 END) AS Other
+			FROM $dbPrefix_curr.tbxdealrcpt r JOIN $dbPrefix_curr.tbxdealrcptdtl rd
+			ON rd.rcptid = r.rcptid AND r.rcptpaymode = 1  AND r.cclflg = 0 AND r.cbflg = 0
+			$rcpt_clause
+			GROUP BY r.rcptid
+			) rt
+			JOIN lksa.tbmdeal d ON d.dealid = rt.dealid :hpdt :centre :state
+			JOIN lksa.tbmbroker b1 ON rt.sraid = b1.brkrid AND b1.brkrtyp = 2
+			LEFT JOIN $dbPrefix_curr.tbxfieldrcvry ON rt.dealid = tbxfieldrcvry.dealid :mm
+			LEFT JOIN lksa.tbmbroker b2 ON tbxfieldrcvry.sraid = b2.brkrid AND b2.brkrtyp = 2
+			LEFT JOIN ob_sa.tbmuser u ON tbxfieldrcvry.callerid = u.userid where 1 :caller :sra :bucket",
+		'columns' => array(
+			$c++ => array('align'=>1, 'sort'=>0, 'ops'=> NULL, 'link'=> 1, 'stotal' => 0, 'name' => 'Deal No',),
+			$c++ => array('align'=>-1, 'sort'=>0, 'ops'=> NULL, 'link'=> 1, 'stotal' => 2, 'name' => 'Customer Name',),
+			$c++ => array('align'=>-1, 'sort'=>0, 'ops'=> NULL, 'link'=> 0, 'stotal' => 0, 'name' => 'Centre',),
+			$c++ => array('align'=>1, 'sort'=>0, 'ops'=> 'nf', 'link'=> 0, 'stotal' => 1, 'name' => 'EMI',),
+			$c++ => array('align'=>-1, 'sort'=>0, 'ops'=> 'df', 'link'=> 0, 'stotal' => 0, 'name' => 'Receipt Dt',),
+			$c++ => array('align'=>-1, 'sort'=>0, 'ops'=> NULL, 'link'=> 0, 'stotal' => 0, 'name' => 'Taken By',),
+			$c++ => array('align'=>1, 'sort'=>0, 'ops'=> 'nf', 'link'=> 0, 'stotal' => 1, 'name' => 'OD',),
+			$c++ => array('align'=>1, 'sort'=>0, 'ops'=> 'nf', 'link'=> 0, 'stotal' => 1, 'name' => 'Bouncing',),
+			$c++ => array('align'=>1, 'sort'=>0, 'ops'=> 'nf', 'link'=> 0, 'stotal' => 1, 'name' => 'Penalty',),
+			$c++ => array('align'=>1, 'sort'=>0, 'ops'=> 'nf', 'link'=> 0, 'stotal' => 1, 'name' => 'Seizing',),
+			$c++ => array('align'=>1, 'sort'=>0, 'ops'=> 'nf', 'link'=> 0, 'stotal' => 1, 'name' => 'Other',),
+			$c++ => array('align'=>1, 'sort'=>0, 'ops'=> NULL, 'link'=> 0, 'stotal' => 0, 'name' => 'Bucket',),
+			$c++ => array('align'=>-1, 'sort'=>0, 'ops'=> NULL, 'link'=> 0, 'stotal' => 0, 'name' => 'Assigned SRA',),
+			$c++ => array('align'=>-1, 'sort'=>0, 'ops'=> NULL, 'link'=> 0, 'stotal' => 0, 'name' => 'Caller',),
+		),
+	);
+
+	//index == 29
+	$c =0;$qi = 29;
+	$query[$qi] = array(
+		'title'=> 'Mobile View',
+		'default_sort' => 'name',
+		'default_sort_type' => 'asc',
+		'filters' => array('centre'),
+		'row_limit' => 100,
+		'q' => "SELECT sql_calc_found_rows tcase(d.name) as name, CONCAT('http://r.loksuvidha.com:81/app/?imei=',v.imei) AS url, tcase(d.centre) as centre, c.state, v.imei FROM $dbPrefix.tbmemployee d JOIN $dbPrefix.tbmdevices v ON d.id = v.empid AND d.department = 'Recovery'  AND v.active = 2 AND d.active = 2 JOIN $dbPrefix.tbmcentre c ON d.centre = c.centrenm :centre GROUP BY d.id",
+		'columns' => array(
+			$c++ => array('align'=>-1, 'sort'=>0, 'ops'=> NULL, 'link'=> 0, 'stotal' => 0, 'name' => 'Name',),
+			$c++ => array('align'=>-1, 'sort'=>0, 'ops'=> NULL, 'link'=> 0, 'stotal' => 0, 'name' => 'URL', 'type' => 'URL',),
+			$c++ => array('align'=>-1, 'sort'=>0, 'ops'=> NULL, 'link'=> 0, 'stotal' => 0, 'name' => 'Centre',),
+			$c++ => array('align'=>-1, 'sort'=>0, 'ops'=> NULL, 'link'=> 0, 'stotal' => 0, 'name' => 'State',),
+			$c++ => array('align'=>0, 'sort'=>0, 'ops'=> NULL, 'link'=> 0, 'stotal' => 0, 'name' => 'IMEI',),
+		),
+	);
+
+	//index == 30
+	$c =0;$qi = 30;
+	$mm = isset($_REQUEST['mm']) ? $_REQUEST['mm'] : 0;
+	$rcpt_clause = $filters ['mm']['options'][$mm]['query1'];
+	$query[$qi] = array(
+		'title'=> 'EMI Recovery - Centre Wise',
+		'default_sort' => 'centre',
+		'default_sort_type' => 'asc',
+		'filters' => array('mm', 'dd', 'hpdt', 'reccentre', 'state'),
+		'alternate' => array(array(9, 'Executive Wise'), array(30, 'Centre Wise'), array(31, 'Month Wise')),
+		'row_limit' => 100,
+		'q' => "SELECT tcase(ifnull(b.centre, ' Uniassigned')) as centre, SUM(ifnull(OdDueAmt,0)/EMI) AS Assigned, SUM(rc.amt/EMI) AS Recovered, (SUM(rc.amt/EMI)/SUM(OdDueAmt/EMI)*100) AS Percentage
+		, SUM(case when d.rgid = 1 then d.rgid else 0 end) as A1
+		, SUM(case when d.rgid = 1 then rc.amt/EMI else 0 end) as B1
+		, SUM(case when d.rgid = 2 then d.rgid else 0 end) as A2
+		, SUM(case when d.rgid = 2 then rc.amt/EMI else 0 end) as B2
+		, SUM(case when d.rgid = 3 then d.rgid else 0 end) as A3
+		, SUM(case when d.rgid = 3 then rc.amt/EMI else 0 end) as B3
+		, SUM(case when d.rgid = 4 then d.rgid else 0 end) as A4
+		, SUM(case when d.rgid = 4 then rc.amt/EMI else 0 end) as B4
+		, SUM(case when d.rgid = 5 then d.rgid else 0 end) as A5
+		, SUM(case when d.rgid = 5 then rc.amt/EMI else 0 end) as B5
+		, SUM(case when d.rgid > 5 then d.rgid else 0 end) as A6
+		, SUM(case when d.rgid > 5 then rc.amt/EMI else 0 end) as B6
+		FROM ".$dbPrefix_curr.".tbxfieldrcvry d LEFT JOIN ".$dbPrefix.".tbmbroker b ON d.sraid = b.brkrid AND b.brkrtyp = 2 :reccentre
+		LEFT JOIN (SELECT dealid, IFNULL(SUM(rcptamt),0) AS amt FROM ".$dbPrefix_curr.".tbxdealrcpt r JOIN ".$dbPrefix_curr.".tbxdealrcptdtl rd ON r.rcptid = rd.rcptid AND r.cbflg = 0 AND r.cclflg = 0 AND r.rcptpaymode = 1 AND (rd.dctyp = 101 OR rd.dctyp = 102 OR rd.dctyp = 111) WHERE 1 $rcpt_clause GROUP BY r.dealid) rc
+		ON d.dealid = rc.dealid WHERE 1 :mm :dd :hpdt :state GROUP BY b.centre",
+		'columns' => array(
+			$c++ => array('align'=>-1, 'sort'=>1, 'ops'=> NULL, 'link'=> 0, 'stotal' => 0, 'name' => 'Centre'),
+			$c++ => array('align'=>1, 'sort'=>1, 'ops'=> 'nf', 'link'=> 0, 'stotal' => 1, 'name' => 'Assigned'),
+			$c++ => array('align'=>1, 'sort'=>1, 'ops'=> 'nf', 'link'=> 0, 'stotal' => 1, 'name' => 'Recovered'),
+			$c++ => array('align'=>1, 'sort'=>1, 'ops'=> 'nf', 'link'=> 0, 'stotal' => 0, 'name' => '%', 'suffix'=>'%'),
+			$c++ => array('align'=>1, 'sort'=>1, 'ops'=> 'nf', 'link'=> 0, 'stotal' => 1, 'name' => 'B1','style'=>'background-color:#F6F6F6'),
+			$c++ => array('align'=>1, 'sort'=>1, 'ops'=> 'nf', 'link'=> 0, 'stotal' => 1, 'name' => '','style'=>'background-color:#F6F6F6'),
+			$c++ => array('align'=>1, 'sort'=>1, 'ops'=> 'nf', 'link'=> 0, 'stotal' => 1, 'name' => 'B2'),
+			$c++ => array('align'=>1, 'sort'=>1, 'ops'=> 'nf', 'link'=> 0, 'stotal' => 1, 'name' => ''),
+			$c++ => array('align'=>1, 'sort'=>1, 'ops'=> 'nf', 'link'=> 0, 'stotal' => 1, 'name' => 'B3','style'=>'background-color:#F6F6F6'),
+			$c++ => array('align'=>1, 'sort'=>1, 'ops'=> 'nf', 'link'=> 0, 'stotal' => 1, 'name' => '','style'=>'background-color:#F6F6F6'),
+			$c++ => array('align'=>1, 'sort'=>1, 'ops'=> 'nf', 'link'=> 0, 'stotal' => 1, 'name' => 'B4'),
+			$c++ => array('align'=>1, 'sort'=>1, 'ops'=> 'nf', 'link'=> 0, 'stotal' => 1, 'name' => ''),
+			$c++ => array('align'=>1, 'sort'=>1, 'ops'=> 'nf', 'link'=> 0, 'stotal' => 1, 'name' => 'B5','style'=>'background-color:#F6F6F6'),
+			$c++ => array('align'=>1, 'sort'=>1, 'ops'=> 'nf', 'link'=> 0, 'stotal' => 1, 'name' => '','style'=>'background-color:#F6F6F6'),
+			$c++ => array('align'=>1, 'sort'=>1, 'ops'=> 'nf', 'link'=> 0, 'stotal' => 1, 'name' => 'B6'),
+			$c++ => array('align'=>1, 'sort'=>1, 'ops'=> 'nf', 'link'=> 0, 'stotal' => 1, 'name' => ''),
+		),
+	);
+
+
+	//index == 31
+	$c =0;$qi = 31;
+	$mm = isset($_REQUEST['mm']) ? $_REQUEST['mm'] : 0;
+	$rcpt_clause = $filters ['mm']['options'][$mm]['query1'];
+	$query[$qi] = array(
+		'title'=> 'EMI Recovery - Monthwise',
+		'default_sort' => 'mm ',
+		'default_sort_type' => 'asc',
+		'filters' => array('dd', 'hpdt', 'centre', 'state'),
+		'alternate' => array(array(9, 'Executive Wise'), array(30, 'Centre Wise'), array(31, 'Month Wise')),
+		'row_limit' => 100,
+		'q' => "SELECT mm, SUM(ifnull(OdDueAmt,0)/EMI) AS total, SUM(case when sraid is not null then ifnull(OdDueAmt,0)/EMI ELSE 0 END) AS Assigned, SUM(ifnull(rc.amt,0)/EMI) AS Recovered, (SUM(ifnull(rc.amt,0)/EMI)/SUM(ifnull(OdDueAmt,0)/EMI)*100) AS t_per, (SUM(ifnull(rc.amt,0)/EMI)/SUM(case when sraid is not null then ifnull(OdDueAmt,0)/EMI ELSE 0 END)*100) as a_per
+		, SUM(case when d.rgid = 1 then d.rgid else 0 end) as A1, SUM(case when d.rgid = 1 then rc.amt/EMI else 0 end) as B1
+		, SUM(case when d.rgid = 2 then d.rgid else 0 end) as A2, SUM(case when d.rgid = 2 then rc.amt/EMI else 0 end) as B2
+		, SUM(case when d.rgid = 3 then d.rgid else 0 end) as A3, SUM(case when d.rgid = 3 then rc.amt/EMI else 0 end) as B3
+		, SUM(case when d.rgid = 4 then d.rgid else 0 end) as A4, SUM(case when d.rgid = 4 then rc.amt/EMI else 0 end) as B4
+		, SUM(case when d.rgid = 5 then d.rgid else 0 end) as A5, SUM(case when d.rgid = 5 then rc.amt/EMI else 0 end) as B5
+		, SUM(case when d.rgid > 5 then d.rgid else 0 end) as A6, SUM(case when d.rgid > 5 then rc.amt/EMI else 0 end) as B6
+		FROM ".$dbPrefix_curr.".tbxfieldrcvry d
+		LEFT JOIN (SELECT dealid, Month(rcptdt) as rcm, IFNULL(SUM(rcptamt),0) AS amt FROM ".$dbPrefix_curr.".tbxdealrcpt r JOIN ".$dbPrefix_curr.".tbxdealrcptdtl rd ON r.rcptid = rd.rcptid AND r.cbflg = 0 AND r.cclflg = 0 AND r.rcptpaymode = 1 AND rd.dctyp in (101,102,111) GROUP BY r.dealid, month(r.rcptdt)) rc
+		ON d.dealid = rc.dealid and d.mm = rc.rcm WHERE 1 :dd :hpdt :state group by mm ",
+		'columns' => array(
+			$c++ => array('align'=>-1, 'sort'=>1, 'ops'=> 'toMonthName', 'link'=> 0, 'stotal' => 0, 'name' => 'Month'),
+			$c++ => array('align'=>1, 'sort'=>1, 'ops'=> 'nf', 'link'=> 0, 'stotal' => 1, 'name' => 'Total'),
+			$c++ => array('align'=>1, 'sort'=>1, 'ops'=> 'nf', 'link'=> 0, 'stotal' => 1, 'name' => 'Assigned'),
+			$c++ => array('align'=>1, 'sort'=>1, 'ops'=> 'nf', 'link'=> 0, 'stotal' => 1, 'name' => 'Recovered'),
+			$c++ => array('align'=>1, 'sort'=>1, 'ops'=> 'nf', 'link'=> 0, 'stotal' => 0, 'name' => 'Total %', 'suffix'=>'%'),
+			$c++ => array('align'=>1, 'sort'=>1, 'ops'=> 'nf', 'link'=> 0, 'stotal' => 0, 'name' => 'Assigned %', 'suffix'=>'%'),
+			$c++ => array('align'=>1, 'sort'=>1, 'ops'=> 'nf', 'link'=> 0, 'stotal' => 1, 'name' => 'B1','style'=>'background-color:#F6F6F6'),
+			$c++ => array('align'=>1, 'sort'=>1, 'ops'=> 'nf', 'link'=> 0, 'stotal' => 1, 'name' => '','style'=>'background-color:#F6F6F6'),
+			$c++ => array('align'=>1, 'sort'=>1, 'ops'=> 'nf', 'link'=> 0, 'stotal' => 1, 'name' => 'B2'),
+			$c++ => array('align'=>1, 'sort'=>1, 'ops'=> 'nf', 'link'=> 0, 'stotal' => 1, 'name' => ''),
+			$c++ => array('align'=>1, 'sort'=>1, 'ops'=> 'nf', 'link'=> 0, 'stotal' => 1, 'name' => 'B3','style'=>'background-color:#F6F6F6'),
+			$c++ => array('align'=>1, 'sort'=>1, 'ops'=> 'nf', 'link'=> 0, 'stotal' => 1, 'name' => '','style'=>'background-color:#F6F6F6'),
+			$c++ => array('align'=>1, 'sort'=>1, 'ops'=> 'nf', 'link'=> 0, 'stotal' => 1, 'name' => 'B4'),
+			$c++ => array('align'=>1, 'sort'=>1, 'ops'=> 'nf', 'link'=> 0, 'stotal' => 1, 'name' => ''),
+			$c++ => array('align'=>1, 'sort'=>1, 'ops'=> 'nf', 'link'=> 0, 'stotal' => 1, 'name' => 'B5','style'=>'background-color:#F6F6F6'),
+			$c++ => array('align'=>1, 'sort'=>1, 'ops'=> 'nf', 'link'=> 0, 'stotal' => 1, 'name' => '','style'=>'background-color:#F6F6F6'),
+			$c++ => array('align'=>1, 'sort'=>1, 'ops'=> 'nf', 'link'=> 0, 'stotal' => 1, 'name' => 'B6'),
+			$c++ => array('align'=>1, 'sort'=>1, 'ops'=> 'nf', 'link'=> 0, 'stotal' => 1, 'name' => ''),
+		),
+	);
+
+	if($_SESSION['is_admin_login']){
+	//index == 32
+	$c =0;$qi = 32;
+	$mm = isset($_REQUEST['mm']) ? $_REQUEST['mm'] : 0;
+	$rcpt_clause = $filters ['mm']['options'][$mm]['query1'];
+	$query[$qi] = array(
+		'title'=> 'Collections - Date Wise',
+		'alternate' => array(array(32, 'Date Wise'), array(33, 'Month Wise')),
+		'default_sort' => 'rcptdt',
+		'default_sort_type' => 'asc',
+		'filters' => array('mm', 'hpdt','centre', 'state', 'rcptpaytype'),
+		'row_limit' => 100,
+		'q' => "SELECT r.rcptdt,
+		SUM(CASE WHEN rd.dctyp IN (101,102,111) THEN rd.rcptamt ELSE 0 END) as OD,
+		SUM(CASE WHEN rd.dctyp = 103 THEN rd.rcptamt ELSE 0 END) as CB,
+		SUM(CASE WHEN rd.dctyp = 104 THEN rd.rcptamt ELSE 0 END) as Penalty,
+		SUM(CASE WHEN rd.dctyp IN(103,104) THEN rd.rcptamt ELSE 0 END) as CBP,
+		SUM(CASE WHEN rd.dctyp IN(103,104) THEN rd.rcptamt ELSE 0 END)/sum(rd.rcptamt)*100 as per,
+		SUM(CASE WHEN rd.dctyp = 105 THEN rd.rcptamt ELSE 0 END) as Seizing,
+		SUM(CASE WHEN rd.dctyp = 107 THEN rd.rcptamt ELSE 0 END) as Other,
+		sum(rd.rcptamt) as total
+		FROM lksa.tbmdeal d JOIN ".$dbPrefix_curr.".tbxdealrcpt r ON d.dealid = r.dealid AND rcptpaymode in (1,2,6) AND r.cbflg = 0 AND r.cclflg = 0 :hpdt :centre :state :rcptpaytype $rcpt_clause
+		JOIN ".$dbPrefix_curr.".tbxdealrcptdtl rd
+		ON r.rcptid = rd.rcptid  GROUP BY r.rcptdt",
+		'columns' => array(
+			$c++ => array('align'=>0, 'sort'=>0, 'ops'=> 'df', 'link'=> 0, 'stotal' => 2, 'name' => 'Receipt Dt',),
+			$c++ => array('align'=>1, 'sort'=>0, 'ops'=> 'nf', 'link'=> 0, 'stotal' => 1, 'name' => 'OD'),
+			$c++ => array('align'=>1, 'sort'=>0, 'ops'=> 'nf', 'link'=> 0, 'stotal' => 1, 'name' => 'Bouncing'),
+			$c++ => array('align'=>1, 'sort'=>0, 'ops'=> 'nf', 'link'=> 0, 'stotal' => 1, 'name' => 'Penalty'),
+			$c++ => array('align'=>1, 'sort'=>0, 'ops'=> 'nf', 'link'=> 0, 'stotal' => 1, 'name' => 'CBP', 'cummulative'=>1),
+			$c++ => array('align'=>1, 'sort'=>0, 'ops'=> 'nf', 'link'=> 0, 'stotal' => 0, 'name' => 'CBP %', 'suffix'=>'%'),
+			$c++ => array('align'=>1, 'sort'=>0, 'ops'=> 'nf', 'link'=> 0, 'stotal' => 1, 'name' => 'Seizing'),
+			$c++ => array('align'=>1, 'sort'=>0, 'ops'=> 'nf', 'link'=> 0, 'stotal' => 1, 'name' => 'Other'),
+			$c++ => array('align'=>1, 'sort'=>0, 'ops'=> 'nf', 'link'=> 0, 'stotal' => 1, 'name' => 'Total','cummulative'=>1),
+		),
+	);
+
+	//index == 33
+	$c =0;$qi = 33;
+	$mm = isset($_REQUEST['mm']) ? $_REQUEST['mm'] : 0;
+	$rcpt_clause = $filters ['mm']['options'][$mm]['query1'];
+	$query[$qi] = array(
+		'title'=> 'Collections - Month Wise',
+		'alternate' => array(array(32, 'Date Wise'), array(33, 'Month Wise')),
+		'default_sort' => 'mm',
+		'default_sort_type' => 'asc',
+		'filters' => array('mm', 'hpdt','centre', 'state', 'rcptpaytype'),
+		'row_limit' => 100,
+		'q' => "SELECT month(r.rcptdt) as mm,
+		SUM(CASE WHEN rd.dctyp IN (101,102,111) THEN rd.rcptamt ELSE 0 END) as OD,
+		SUM(CASE WHEN rd.dctyp = 103 THEN rd.rcptamt ELSE 0 END) as CB,
+		SUM(CASE WHEN rd.dctyp = 104 THEN rd.rcptamt ELSE 0 END) as Penalty,
+		SUM(CASE WHEN rd.dctyp IN(103,104) THEN rd.rcptamt ELSE 0 END) as CBP,
+		SUM(CASE WHEN rd.dctyp IN(103,104) THEN rd.rcptamt ELSE 0 END)/sum(rd.rcptamt)*100 as per,
+		SUM(CASE WHEN rd.dctyp = 105 THEN rd.rcptamt ELSE 0 END) as Seizing,
+		SUM(CASE WHEN rd.dctyp = 107 THEN rd.rcptamt ELSE 0 END) as Other,
+		sum(rd.rcptamt) as total
+		FROM lksa.tbmdeal d JOIN ".$dbPrefix_curr.".tbxdealrcpt r ON d.dealid = r.dealid AND rcptpaymode in (1,2,6) :hpdt :centre :state :rcptpaytype
+		JOIN ".$dbPrefix_curr.".tbxdealrcptdtl rd
+		ON r.rcptid = rd.rcptid AND r.cbflg = 0 AND r.cclflg = 0 GROUP BY month(r.rcptdt)",
+		'columns' => array(
+			$c++ => array('align'=>-1, 'sort'=>0, 'ops'=> 'toMonthName', 'link'=> 0, 'stotal' => 2, 'name' => 'Month',),
+			$c++ => array('align'=>1, 'sort'=>0, 'ops'=> 'nf', 'link'=> 0, 'stotal' => 1, 'name' => 'OD'),
+			$c++ => array('align'=>1, 'sort'=>0, 'ops'=> 'nf', 'link'=> 0, 'stotal' => 1, 'name' => 'Bouncing'),
+			$c++ => array('align'=>1, 'sort'=>0, 'ops'=> 'nf', 'link'=> 0, 'stotal' => 1, 'name' => 'Penalty'),
+			$c++ => array('align'=>1, 'sort'=>0, 'ops'=> 'nf', 'link'=> 0, 'stotal' => 1, 'name' => 'CBP',),
+			$c++ => array('align'=>1, 'sort'=>0, 'ops'=> NULL, 'link'=> 0, 'stotal' => 0, 'name' => 'CBP %', 'suffix'=>'%'),
+			$c++ => array('align'=>1, 'sort'=>0, 'ops'=> 'nf', 'link'=> 0, 'stotal' => 1, 'name' => 'Seizing'),
+			$c++ => array('align'=>1, 'sort'=>0, 'ops'=> 'nf', 'link'=> 0, 'stotal' => 1, 'name' => 'Other'),
+			$c++ => array('align'=>1, 'sort'=>0, 'ops'=> 'nf', 'link'=> 0, 'stotal' => 1, 'name' => 'Total','cummulative'=>1),
+		),
+	);
+
+	}
 
 	/**************************** Controller Starts Here **************************************/
 	$c=0;
@@ -1213,7 +1682,6 @@ function generic(){
 		echo "<center class='red'>Wrong selection! Please choose correct option from menu!</center>";
 		return;
 	}
-
 
 	foreach($query[$index]['filters'] as $f){
 		$var = $f."_in";
@@ -1237,10 +1705,10 @@ function generic(){
 	$q .=" order by $sval $stype limit $from, $limit;";
 
 //	echo $index;
-//	print_a($q);
+	print_a($q);
 //	die();
 
-	$name = array(); $align= array(); $sort = array(); $link = array(); $ops = array(); $stotal = array(); $style = array(); $suffix= array();$cummulative= array();
+	$name = array(); $align= array(); $sort = array(); $link = array(); $ops = array(); $stotal = array(); $style = array(); $suffix= array();$cummulative= array();$type= array();
 
 	foreach($query[$index]['columns'] as $i => $attr){
 		$name[$i] = $attr['name'];
@@ -1252,6 +1720,7 @@ function generic(){
 		$style[$i] = isset($attr['style']) ? $attr['style'] : NULL;
 		$suffix[$i] = isset($attr['suffix']) ? $attr['suffix'] : NULL;
 		$cummulative[$i] = isset($attr['cummulative']) ? $attr['cummulative'] : NULL;
+		$type[$i] = isset($attr['type']) ? $attr['type'] : NULL;
 	}
 
 	$totalRows =0;
@@ -1276,7 +1745,7 @@ function generic(){
 						<td nowrap="nowrap">
 							<?if(isset($query[$index]['alternate'])){
 								foreach($query[$index]['alternate'] as $f){?>
-									<a class='alternate' href='?task=generic&index=<?=$f[0]?>'><?=$f[1]?></a>
+									<a class='alternate' href='?task=generic&index=<?=$f[0]?>'><?=$f[1]?></a> <span class='separator'>|</span>
 								<?}
 							}?>
 							<?foreach($query[$index]['filters'] as $f){?>
@@ -1378,7 +1847,13 @@ function generic(){
 					$i=0;
 				?><tr><td class="textright"><?=$slNo++?></td><?
 						foreach($row as $k => $v){?>
-							<td <?=(isset($style[$i]) ? 'style="'.$style[$i].'"' : '')?>><?=($link[$i] == 0 ? (is_null($ops[$i]) ? $v : $ops[$i]($v)) : "<a target='_blank' href='?task=deal&dealno=".$row['dealno']."'>".(is_null($ops[$i]) ? $v : $ops[$i]($v))."</a>")?><?=(is_null($suffix[$i]) ? '' : ' '.$suffix[$i])?></td>
+							<td <?=(isset($style[$i]) ? 'style="'.$style[$i].'"' : '')?>>
+							<?if(is_null($type[$i])){?>
+								<?=($link[$i] == 0 ? (is_null($ops[$i]) ? $v : $ops[$i]($v)) : "<a target='_blank' href='?task=deal&dealno=".$row['dealno']."'>".(is_null($ops[$i]) ? $v : $ops[$i]($v))."</a>")?><?=(is_null($suffix[$i]) ? '' : ' '.$suffix[$i])?>
+							<?}else if($type[$i] =='URL'){?>
+								<a target='_blank' href="<?=$row['url']?>"><?=$row['url']?></a>
+							<?}?>
+							</td>
 							<?$total[$k] += $v;
 							if(isset($cummulative[$i]) && $cummulative[$i] == 1){?><td><?=nf($total[$k])?></td><?}
 							$i++;

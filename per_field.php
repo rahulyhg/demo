@@ -44,6 +44,7 @@ function per_field(){
 	$sraid = isset($_REQUEST['sraid']) ? $_REQUEST['sraid'] : "";
 	$rc_sraid = isset($_REQUEST['rc_sraid']) ? $_REQUEST['rc_sraid'] : "";
     $centre = isset($_REQUEST['centre']) ? $_REQUEST['centre'] : "";
+    $state = isset($_REQUEST['state']) ? $_REQUEST['state'] : "";
 	$bucket = isset($_REQUEST['bucket']) ? $_REQUEST['bucket'] : -1;
 	$dd = isset($_REQUEST['dd']) ? $_REQUEST['dd'] : -1;
 	$compare = isset($_REQUEST['compare']) ? $_REQUEST['compare'] : 1;
@@ -98,8 +99,8 @@ function per_field(){
 		array(date('Y-M',strtotime('-3 month', strtotime($fd))), date('m',strtotime('-3 month', strtotime($fd))), date('Y', strtotime('-3 month', strtotime($fd)))),
 		array(date('Y-M',strtotime('-4 month', strtotime($fd))), date('m',strtotime('-4 month', strtotime($fd))), date('Y', strtotime('-4 month', strtotime($fd)))),
 		array(date('Y-M',strtotime('-5 month', strtotime($fd))), date('m',strtotime('-5 month', strtotime($fd))), date('Y', strtotime('-5 month', strtotime($fd)))),
-/*   		array(date('Y-M',strtotime('-6 month', strtotime($fd))), date('m',strtotime('-6 month', strtotime($fd))), date('Y', strtotime('-6 month', strtotime($fd))))
-*/
+//   		array(date('Y-M',strtotime('-6 month', strtotime($fd))), date('m',strtotime('-6 month', strtotime($fd))), date('Y', strtotime('-6 month', strtotime($fd))))
+
    	);
 	$mm = $ason_options[$ason][1]; $yy = $ason_options[$ason][2];
 	$dbPrefix_curr = "lksa".($mm < 4 ? ($yy - 1)."".substr($yy,-2) : $yy."".(substr($yy,-2)+1));
@@ -123,7 +124,7 @@ function per_field(){
 	switch($type){
 		case 0: //Deal Center Wise
 		case 1: //Deal Centre Executive Wise
-			$q = "SELECT tcase(t1.centre) as centre, ".($type == 1 ? " t1.sraid, t1.sranm, t1.sraactive, target_cases as target_fd," : '')."
+			$q = "SELECT tcase(t1.state) as state, tcase(t1.centre) as centre, ".($type == 1 ? " t1.sraid, t1.sranm, t1.sraactive, target_cases as target_fd," : '')."
 			COUNT(dealid) AS due, ";
 
 			for($b = 1; $b <=$BUCKET_SIZE; $b++){
@@ -154,7 +155,7 @@ function per_field(){
 			$q .= "	CASE WHEN (t.dealid IS NULL or d.rec_flg =0) AND d.rgid >= $b THEN 1 ELSE 0 END AS b$b, "; // Balance
 
 			$q .= " CASE WHEN (t.dealid IS NOT NULL or d.rec_flg !=0) THEN 1 ELSE 0 END AS recovered,
-			d.sraid, b.brkrnm as sranm, b.active as sraactive, tcase(".($by == $BY_REC_CENTRE ? 'b.' : 'd.')."centre) as centre
+			d.sraid, b.brkrnm as sranm, b.active as sraactive, ".($by == $BY_REC_CENTRE ? 'b.' : 'd.')."centre, ".($by == $BY_REC_CENTRE ? 'b.' : 'd.')." state
 			FROM ".$dbPrefix_curr.".tbxfieldrcvry d
 			LEFT JOIN ".$dbPrefix.".tbmbroker b on d.sraid = b.brkrid and b.brkrtyp = 2
 			LEFT JOIN ".$dbPrefix_curr.".tbxtarget tr on d.sraid = tr.empid and tr.department ='RECOVERY' and tr.mm=".$mm."
@@ -203,25 +204,27 @@ function per_field(){
 					break;
 			}
 
-			$q .= ") t1 GROUP BY ".($type == 1 ? " t1.centre, t1.sraid " : ' t1.centre ')."";
+			$q .= ") t1 GROUP BY t1.state, t1.centre ".($type == 1 ? ", t1.sraid " : '')."";
 
 			$q .= " having 1 ";
 
 			if($centre != "")
 				$q .= " and t1.centre = '$centre'";
 
-		    if($type == 1 && $sraid != 0)
-		    	$q .= " and t1.sraid = '$sraid' ";
+			if($state != "")
+				$q .= " and t1.state = '$state'";
 
 		    if($type == 1 && $sraid != 0)
 		    	$q .= " and t1.sraid = '$sraid' ";
 
+		    if($type == 1 && $sraid != 0)
+		    	$q .= " and t1.sraid = '$sraid' ";
 
-			$q .=" order by ".($type == 1 ? "t1.centre, t1.sranm " : 't1.centre')." ";
+			$q .=" order by t1.state asc, t1.centre asc ".($type == 1 ? ", t1.sranm " : '')." ";
 			break;
 
 		case 2: //Deal Wise
-			$q = " SELECT  SQL_CALC_FOUND_ROWS d.dealid, d.dealid, d.dealno, tcase(d.dealnm) as dealnm, d.hpdt, tbmdeal.hpexpdt, tcase(d.centre) as dealcentre, tcase(d.area) as area, d.emi, d.sraid, tcase(b.brkrnm) as sranm, tcase(e.realname) as callernm, tcase(b.centre) as centre, d.rgid, d.oddueamt, d.catid, d.dd, d.rec_flg, d.rec_sraid, d.rec_total, d.rec_od, d.recstatus_sra, d.rectagid_sra, d.rectagid_caller, st.description as tag_sra, ct.description as tag_caller,
+			$q = " SELECT  SQL_CALC_FOUND_ROWS d.dealid, d.dealid, d.dealno, tcase(d.dealnm) as dealnm, d.hpdt, tbmdeal.hpexpdt, tcase(d.centre) as dealcentre, tcase(d.state) as state,  tcase(d.area) as area, d.emi, d.sraid, tcase(b.brkrnm) as sranm, tcase(e.realname) as callernm, tcase(b.centre) as centre, d.rgid, d.oddueamt, d.catid, d.dd, d.rec_flg, d.rec_sraid, d.rec_total, d.rec_od, d.recstatus_sra, d.rectagid_sra, d.rectagid_caller, st.description as tag_sra, ct.description as tag_caller,
 			t.rc_sraid, t.rc_sranm, t.rcptamt, t.sra_cnt
 			FROM ".$dbPrefix.".tbmdeal JOIN ".$dbPrefix_curr.".tbxfieldrcvry d on tbmdeal.dealid = d.dealid and d.mm = $mm ".$hp_options[$hpdt][1]."";
 
@@ -257,6 +260,9 @@ function per_field(){
 
 			if($centre != "")
 				$q .= " AND ".($by == $BY_REC_CENTRE ? 'b.' : 'd.')."centre = '$centre' ";
+
+			if($state != "")
+				$q .= " AND ".($by == $BY_REC_CENTRE ? 'b.' : 'd.')."state = '$state' ";
 
 			if($callertag != 0)
 				$q .= " AND rectagid_caller = '$callertag' ";
@@ -386,10 +392,17 @@ function per_field(){
                          	<?}?>
                             </select>
 
+                            <select name="state" id="state" class="inputbox" size="1" onchange="call_per_field();">
+                            	<option value="" <? if($state ==""){?> selected="selected" <? }?>>- <?=($by == 0 ? 'Deal' : 'Rec')?> State -</option>
+                         		<option value="MADHYA PRADESH" <? if($state=='MADHYA PRADESH'){?> selected="selected" <? }?>>MP</option>
+                         		<option value="MAHARASHTRA" <? if($state=='MAHARASHTRA'){?> selected="selected" <? }?>>MH</option>
+                         		<option value="CHHATTISGARH" <? if($state=='CHHATTISGARH'){?> selected="selected" <? }?>>CG</option>
+                            </select>
+
                             <select name="dd" id="dd" class="inputbox" size="1" onchange="call_per_field();">
-                            	<option value="0" <? if($dd == 0){?> selected="selected" <? }?>>-Assigned On-</option>
-                           		<option value="1" <? if($dd == 1){?> selected="selected" <? }?>>First Day</option>
-                            	<option value="2" <? if($dd == 2){?> selected="selected" <? }?>>During Month</option>
+                            	<option value="0" <? if($dd == 0){?> selected="selected" <? }?>>-Assigned-</option>
+                           		<option value="1" <? if($dd == 1){?> selected="selected" <? }?>>Opening</option>
+                            	<option value="2" <? if($dd == 2){?> selected="selected" <? }?>>New</option>
                             </select>
 
                             <select name="bucket" id="bucket" class="inputbox" size="1" onchange="call_per_field();" <?=($type != 2 ? 'style="display:none"': '')?>>
@@ -483,8 +496,7 @@ function per_field(){
                    		case 0:
                    		case 1:?>
 						<tr>
-							<th></th>
-							<th></th>
+							<th></th><th></th><th></th>
 							<?if($type == 1){?><th></th><?}?>
 							<th colspan="<?=($type == 1 ? $cols1+1 : $cols1)?>">OPENING</th>
 							<th colspan="<?=$cols1?>">NEW</th>
@@ -493,7 +505,9 @@ function per_field(){
 							<th colspan="<?=($compare == 1 ? 12 : 6)?>">Buckets</th>
 						</tr>
 						<tr>
-							<th>SN</th><th  class='textleft'>Centre</th>
+							<th>SN</th>
+							<th class='textleft'>State</th>
+							<th class='textleft'>Centre</th>
 							<?if($type == 1){?><th class='textleft'>SRA Executive</th><?}?>
 							<th class='fd'>Default</th>
 							<?if($type == 1){?><th class='fd'>Target</th><?}?>
@@ -565,7 +579,7 @@ function per_field(){
                     <tbody>
                         <?
                         	$slNo = ($from + 1);
-							$itr = 1; $oldCentre = 1;
+							$itr = 1; $oldCentre = 1;$oldState = 1;
                             foreach ($deals as $deal){
 								switch($type){
 									case 0://Centre Wise
@@ -576,6 +590,14 @@ function per_field(){
 									<tr>
 										<td class="textright"><?=$slNo++?></td>
 										<!--Centre-->
+										<td class="textleft"><?
+											if($oldState != $deal['state']){
+												if(is_null($deal['state']) || empty($deal['state']))
+													echo "<span class='red'>Unassigned</span>";
+												else
+													echo titleCase($deal['state']);
+											}?>
+										</td>
 										<td class="textleft">
 											<a href="#" onclick="javascript:ge('type').value=1; ge('sraid').value=''; ge('centre').value='<?=$link_centre?>'; call_per_field(); return false;"><?
 													if($oldCentre != $deal['centre']){
@@ -752,9 +774,7 @@ function per_field(){
 										<td class="textright"><?=nf($deal['emi'],0)?></td>
 										<td class="textright"><?=$deal['rgid']?></td>
 										<td class="textright"><?=nf($deal['oddueamt'],0)?></td>
-										<td class="textright <?=($deal['oddueamt'] - $deal['rcptamt'] < 5 ? 'green' : 'red')?>">
-											<?=($deal['rec_flg'] == 0 ? nf($deal['rcptamt'],0) : nf($deal['rec_total'],0))?>
-										</td>
+										<td class="textright <?=($deal['oddueamt'] - $deal['rcptamt'] < 5 ? 'green' : 'red')?>"><?=nf($deal['rcptamt'],0)?></td>
 										<td class="textleft"><?=$deal['tag_caller']?></td>
 										<td class="textleft"><?=$deal['tag_sra']?></td>
 									</tr>
@@ -763,6 +783,7 @@ function per_field(){
 									break;
 								}//Switch
 								$oldCentre = $deal['centre'];
+								$oldState = $deal['state'];
                             } //for loop
                         if($totalRows==0){?>
                             <tr>
@@ -776,7 +797,7 @@ function per_field(){
 								case 0:
 								case 1:?>
 								<tr>
-									<th class='textright'>&nbsp;</th>
+									<th class='textright'>&nbsp;</th><th class='textright'>&nbsp;</th>
 									<?if($type == 1){?><th></th><?}?>
 									<th class='textleft'>Total (Shown Rows Only)</th>
 									<th class="textright">
@@ -869,6 +890,7 @@ function per_field(){
 								<tr>
 									<td class='textright'>&nbsp;</td>
 									<td class='textleft'>&nbsp;</td>
+									<td></td>
 									<?if($type == 1){?><td class='textleft'>&nbsp;</td><?}?>
 									<td class='textright fd'>&nbsp;</td>
 									<?if($type == 1){?><td class='textright fd'><?=($total['assigned_fd'] == 0 ? '-' : nf($total['target_fd']*100/$total['assigned_fd']))?> %</td><?}?>

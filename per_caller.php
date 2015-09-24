@@ -42,6 +42,7 @@ function per_caller(){
 	$callerid = isset($_REQUEST['callerid']) ? $_REQUEST['callerid'] : "";
 	$rc_sraid = isset($_REQUEST['rc_sraid']) ? $_REQUEST['rc_sraid'] : "";
     $centre = isset($_REQUEST['centre']) ? $_REQUEST['centre'] : "";
+    $state = isset($_REQUEST['state']) ? $_REQUEST['state'] : "";
 	$bucket = isset($_REQUEST['bucket']) ? $_REQUEST['bucket'] : -1;
 	$dd = isset($_REQUEST['dd']) ? $_REQUEST['dd'] : -1;
 	$active = isset($_REQUEST['active']) ? $_REQUEST['active'] : 0;
@@ -102,10 +103,9 @@ function per_caller(){
    		array(date('Y-M',strtotime('-2 month', strtotime($fd))), date('m',strtotime('-2 month', strtotime($fd))), date('Y', strtotime('-2 month', strtotime($fd)))),
 		array(date('Y-M',strtotime('-3 month', strtotime($fd))), date('m',strtotime('-3 month', strtotime($fd))), date('Y', strtotime('-3 month', strtotime($fd)))),
    		array(date('Y-M',strtotime('-4 month', strtotime($fd))), date('m',strtotime('-4 month', strtotime($fd))), date('Y', strtotime('-4 month', strtotime($fd)))),
-
   		array(date('Y-M',strtotime('-5 month', strtotime($fd))), date('m',strtotime('-5 month', strtotime($fd))), date('Y', strtotime('-5 month', strtotime($fd)))),
-/*   		array(date('Y-M',strtotime('-6 month', strtotime($fd))), date('m',strtotime('-6 month', strtotime($fd))), date('Y', strtotime('-6 month', strtotime($fd))))
-*/
+//   		array(date('Y-M',strtotime('-6 month', strtotime($fd))), date('m',strtotime('-6 month', strtotime($fd))), date('Y', strtotime('-6 month', strtotime($fd))))
+
    	);
 	$mm = $ason_options[$ason][1]; $yy = $ason_options[$ason][2];
 	$dbPrefix_curr = "lksa".($mm < 4 ? ($yy - 1)."".substr($yy,-2) : $yy."".(substr($yy,-2)+1));
@@ -130,7 +130,7 @@ function per_caller(){
 	switch($type){
 		case 0: //Center Wise
 		case 1: //Executive Wise
-			$q = "SELECT t1.callerid, t1.callernm, t1.calleractive, ".($type == 1 ? " tcase(t1.centre) as centre, " : '')."
+			$q = "SELECT t1.callerid, t1.callernm, t1.calleractive, ".($type == 1 ? " tcase(t1.centre) as centre, tcase(t1.state) as state, " : '')."
 			COUNT(dealid) AS due, ";
 
 			for($b = 1; $b <=$BUCKET_SIZE; $b++){
@@ -143,7 +143,7 @@ function per_caller(){
 			SUM(recovered_dm) AS recovered_dm,
 			SUM(recovered) AS recovered
 			FROM (
-			SELECT d.inserttimestamp, d.dealid, tcase(d.centre) as centre, d.OdDueAmt, d.dd, t.dealid AS rdid, t.rcptamt, d.OdDueAmt - t.rcptamt AS balance,
+			SELECT d.inserttimestamp, d.dealid, tcase(d.centre) as centre, tcase(d.state) as state, d.OdDueAmt, d.dd, t.dealid AS rdid, t.rcptamt, d.OdDueAmt - t.rcptamt AS balance,
 			CASE WHEN d.dd = 1 THEN 1 ELSE 0 END AS assigned_fd,
 			CASE WHEN d.dd = 1 AND (t.dealid IS NOT NULL or d.rec_flg !=0) THEN 1 ELSE 0 END AS recovered_fd,
 			CASE WHEN d.dd != 1 THEN 1 ELSE 0 END AS assigned_dm,
@@ -207,15 +207,17 @@ function per_caller(){
 
 			if($centre != "")
 				$q .= " AND centre = '$centre'";
-			$q .= ") t1 GROUP BY t1.callerid ".($type == 1 ? ", t1.centre  " : '')."";
 
+			if($state != "")
+				$q .= " AND state = '$state' ";
 
+			$q .= ") t1 GROUP BY t1.callerid ".($type == 1 ? ", t1.state, t1.centre  " : '')."";
 
-			$q .=" order by t1.callernm ".($type == 1  ? ", t1.centre " : '')."";
+			$q .=" order by t1.callernm ".($type == 1  ? ", t1.state asc, t1.centre asc " : '')."";
 			break;
 
 		case 2: //Deal Wise
-			$q = " SELECT  SQL_CALC_FOUND_ROWS d.dealid, d.dealid, d.dealno, d.dealnm, d.hpdt, tcase(d.centre) as centre, d.emi ,d.callerid, b.realname as callernm, b.brkrnm as sranm, d.rgid, d.oddueamt, d.catid, d.dd, d.rec_flg, d.rec_sraid, d.rec_total, d.rec_od, t.rc_sraid, t.rc_sranm, t.rcptamt,
+			$q = " SELECT  SQL_CALC_FOUND_ROWS d.dealid, d.dealid, d.dealno, d.dealnm, d.hpdt, tcase(d.centre) as centre, d.state,  d.emi ,d.callerid, b.realname as callernm, b.brkrnm as sranm, d.rgid, d.oddueamt, d.catid, d.dd, d.rec_flg, d.rec_sraid, d.rec_total, d.rec_od, t.rc_sraid, t.rc_sranm, t.rcptdt, t.rcptamt,
 			d.recstatus_sra, d.rectagid_sra, d.rectagid_caller, st.description as tag_sra, ct.description as tag_caller
 			FROM ".$dbPrefix.".tbmdeal JOIN ".$dbPrefix_curr.".tbxfieldrcvry d on tbmdeal.dealid = d.dealid and d.mm = $mm ";
 
@@ -235,9 +237,9 @@ function per_caller(){
 			LEFT JOIN ".$dbPrefix.".tbmrecoverytags st ON d.rectagid_sra = st.tagid
 			LEFT JOIN ".$dbPrefix.".tbmrecoverytags ct ON d.rectagid_caller = ct.tagid
 			LEFT JOIN(
-				SELECT t1.dealid,t1.sraid, t1.rcptamt, b.brkrid AS rc_sraid, b.brkrnm AS rc_sranm
+				SELECT t1.dealid,t1.sraid, t1.rcptdt, t1.rcptamt, b.brkrid AS rc_sraid, b.brkrnm AS rc_sranm
 				FROM
-					(SELECT r.dealid, r.sraid, SUM(rd.rcptamt) AS rcptamt
+					(SELECT r.dealid, r.sraid, r.rcptdt, SUM(rd.rcptamt) AS rcptamt
 						FROM lksa201516.tbxdealrcpt r JOIN ".$dbPrefix_curr.".tbxdealrcptdtl rd
 						ON r.rcptid = rd.rcptid
 						WHERE r.cclflg = 0 AND r.CBflg = 0 AND (rd.dctyp = 101 OR rd.dctyp = 102 OR rd.dctyp = 111) AND r.rcptpaymode = 1
@@ -249,6 +251,9 @@ function per_caller(){
 
 			if($centre != "")
 				$q .= " AND d.centre = '$centre' ";
+
+			if($state != "")
+				$q .= " AND d.state = '$state' ";
 
 			if($callertag != 0)
 				$q .= " AND rectagid_caller = '$callertag' ";
@@ -376,10 +381,17 @@ function per_caller(){
                          	<?}?>
                             </select>
 
+                            <select name="state" id="state" class="inputbox" size="1" onchange="call_per_caller();">
+                            	<option value="" <? if($state ==""){?> selected="selected" <? }?>>- State -</option>
+                         		<option value="MADHYA PRADESH" <? if($state=='MADHYA PRADESH'){?> selected="selected" <? }?>>MP</option>
+                         		<option value="MAHARASHTRA" <? if($state=='MAHARASHTRA'){?> selected="selected" <? }?>>MH</option>
+                         		<option value="CHHATTISGARH" <? if($state=='CHHATTISGARH'){?> selected="selected" <? }?>>CG</option>
+                            </select>
+
                             <select name="dd" id="dd" class="inputbox" size="1" onchange="call_per_caller();">
-                            	<option value="0" <? if($dd == 0){?> selected="selected" <? }?>>-Assigned On-</option>
-                           		<option value="1" <? if($dd == 1){?> selected="selected" <? }?>>First Day</option>
-                            	<option value="2" <? if($dd == 2){?> selected="selected" <? }?>>During Month</option>
+                            	<option value="0" <? if($dd == 0){?> selected="selected" <? }?>>-Assigned-</option>
+                           		<option value="1" <? if($dd == 1){?> selected="selected" <? }?>>Opening</option>
+                            	<option value="2" <? if($dd == 2){?> selected="selected" <? }?>>New</option>
                             </select>
 
                             <select name="active" id="active" class="inputbox" size="1" onchange="call_per_caller();" <?=($type != 2 ? 'style="display:none"': '')?>>
@@ -460,9 +472,9 @@ function per_caller(){
                    		case 0:
                    		case 1:?>
 						<tr>
-							<th></th>
-							<th></th>
-							<?if($type == 1){?><th></th><?}?>
+							<th>SN</th>
+							<th class='textleft'>Calleing Agent</th>
+							<?if($type == 1){?><th class='textleft'>State</th><th class='textleft'>Centre</th><?}?>
 							<th colspan="<?=$cols1?>">OPENING</th>
 							<th colspan="<?=$cols1?>">NEW</th>
 							<th colspan="3">Total Cases</th>
@@ -470,9 +482,12 @@ function per_caller(){
 							<th colspan="<?=($compare == 1 ? 12 : 6)?>">Buckets</th>
 						</tr>
 						<tr>
-							<th>SN</th>
-							<th class='textleft'>Calling Agent</th>
-							<?if($type == 1){?><th class='textleft'>Centre</th><?}?>
+							<th></th>
+							<th></th>
+							<?if($type == 1){?>
+								<th class='textleft'></th>
+								<th class='textleft'></th>
+							<?}?>
 							<th class='fd'>Default</th><th class='fd'>Recovered</th>
 							<th class='dm'>Default</th><th class='dm'>Recovered</th>
 							<th class='total'>Default</th><th class='total'>Recovered</th><th class='total'>%</th>
@@ -498,6 +513,7 @@ function per_caller(){
 						<th class="textleft"><a href="javascript:sort('rgid'); call_per_caller();">Bucket</a></th>
 						<th class="textleft"><a href="javascript:sort('oddueamt'); call_per_caller();">Due EMI</a></th>
 						<th class="textleft"><a href="javascript:sort('rcptamt'); call_per_caller();">Received</a></th>
+						<th class="textleft"><a href="javascript:sort('rcptdt'); call_per_caller();">Rect Dt</a></th>
 						<th class="textleft"><a href="javascript:sort('rectagid_caller'); call_per_caller();">Caller tag</a></th>
 						<th class="textleft"><a href="javascript:sort('rectagid_sra'); call_per_caller();">SRA tag</a></th>
 						<th class="textleft"></th>
@@ -562,6 +578,7 @@ function per_caller(){
 										</td>
 										<!--Centre-->
 										<?if($type == 1){?>
+										<td><?=$deal['state']?></a></td>
 										<td>
 											<a href="#" onclick="javascript:ge('type').value=<?=($totalRows==1 ? 2 : 1)?>; ge('callerid').value='<?=($deal['callerid']==null ? 0 : $deal['callerid'])?>'; <?if($type == 1){?>ge('centre').value='<?=$deal['centre']?>';<?}?> call_per_caller(); return false;"><?=titleCase($deal['centre'])?></a>
 										</td>
@@ -648,18 +665,18 @@ function per_caller(){
 											<!--Pending Deals with Bucket = <?=$b?>-->
 											<? if($compare == 1){?>
 											<td class="textright b<?=$b?>">
-												<a href="#" onclick="javascript:ge('type').value=2; ge('callerid').value='<?=($deal['callerid']==null ? 0 : $deal['callerid'])?>'; <?if($type == 1){?>ge('centre').value='<?=$deal['centre']?>';<?}?> ge('dd').value ='0'; ge('rc_sraid').value = ''; ge('bucket').value = <?=$b?>; call_per_caller(); return false;">
+												<a href="#" onclick="javascript:ge('type').value=2; ge('callerid').value='<?=($deal['callerid']==null ? 0 : $deal['callerid'])?>'; <?if($type == 1){?>ge('centre').value='<?=$deal['centre']?>';<?}?> ge('rc_sraid').value = ''; ge('bucket').value = <?=$b?>; call_per_caller(); return false;">
 													<?=nf($deal["a$b"],0)?>
 												</a>
 											</td>
 											<td class="textright b<?=$b?>">
-												<a href="#" onclick="javascript:ge('type').value=2; ge('callerid').value='<?=($deal['callerid']==null ? 0 : $deal['callerid'])?>'; <?if($type == 1){?>ge('centre').value='<?=$deal['centre']?>';<?}?> ge('dd').value ='0'; ge('rc_sraid').value = -1; ge('bucket').value = <?=$b?>; call_per_caller(); return false;">
+												<a href="#" onclick="javascript:ge('type').value=2; ge('callerid').value='<?=($deal['callerid']==null ? 0 : $deal['callerid'])?>'; <?if($type == 1){?>ge('centre').value='<?=$deal['centre']?>';<?}?> ge('rc_sraid').value = -1; ge('bucket').value = <?=$b?>; call_per_caller(); return false;">
 													<?=nf($deal["r$b"],0)?>
 												</a>
 											</td>
 											<?}else{?>
 											<td class="textright b<?=$b?>">
-												<a href="#" onclick="javascript:ge('type').value=2; ge('callerid').value='<?=($deal['callerid']==null ? 0 : $deal['callerid'])?>'; <?if($type == 1){?>ge('centre').value='<?=$deal['centre']?>';<?}?> ge('dd').value ='0'; ge('rc_sraid').value = 0; ge('bucket').value = <?=$b?>; call_per_caller(); return false;">
+												<a href="#" onclick="javascript:ge('type').value=2; ge('callerid').value='<?=($deal['callerid']==null ? 0 : $deal['callerid'])?>'; <?if($type == 1){?>ge('centre').value='<?=$deal['centre']?>';<?}?> ge('rc_sraid').value = 0; ge('bucket').value = <?=$b?>; call_per_caller(); return false;">
 													<?=nf($deal["b$b"],0)?>
 												</a>
 											</td>
@@ -708,9 +725,12 @@ function per_caller(){
 										<td class="textright"><?=nf($deal['emi'],0)?></td>
 										<td class="textright"><?=$deal['rgid']?></td>
 										<td class="textright"><?=nf($deal['oddueamt'],0)?></td>
+
 										<td class="textright <?=($deal['oddueamt'] - $deal['rcptamt'] < 5 ? 'green' : 'red')?>">
-											<?=($deal['rec_flg'] == 0 ? nf($deal['rcptamt'],0) : nf($deal['rec_total'],0))?>
+											<?=nf($deal['rcptamt'],0)?>
 										</td>
+										<td class="textright"><?=df($deal['rcptdt'])?></td>
+
 										<td class="textleft"><?=$deal['tag_caller']?></td>
 										<td class="textleft"><?//$deal['tag_sra']?></td>
 										<td class="textleft">
@@ -737,7 +757,7 @@ function per_caller(){
 								<tr>
 									<th class='textright'>&nbsp;</th>
 									<th class='textleft'>Total (Shown Rows Only)</th>
-									<?if($type==1){?><th class='textright'>&nbsp;</th><?}?>
+									<?if($type==1){?><th class='textright'>&nbsp;</th><th class='textright'>&nbsp;</th><?}?>
 									<th class="textright">
 										<a href="#" onclick="javascript:ge('type').value=2;
 										ge('dd').value ='1';
@@ -825,7 +845,7 @@ function per_caller(){
 								<tr>
 									<td class='textright'>&nbsp;</td>
 									<td class='textright'>&nbsp;</td>
-									<?if($type == 1){?><td class='textleft'>&nbsp;</td><?}?>
+									<?if($type == 1){?><td class='textleft'>&nbsp;</td><td class='textleft'>&nbsp;</td><?}?>
 									<td class='textright fd'>&nbsp;</td>
 									<td class='textright fd'><?=($total['assigned_fd'] == 0 ? '-' : nf($total['recovered_fd']*100/$total['assigned_fd']))?> %</td>
 									<td class='textright dm'>&nbsp;</th>
@@ -857,6 +877,7 @@ function per_caller(){
 									<th class='textright'>&nbsp;</th>
 									<th class='textright'><?=nf($total['due'])?></th>
 									<th class="textright"><?=nf($total['recovered'])?></th>
+									<th></th>
 									<th></th>
 									<th></th>
 									<th></th>

@@ -56,24 +56,24 @@ function deal(){
 	$dealid = isset($_REQUEST['dealid'])? $_REQUEST['dealid'] : 0;
 	if(isset($_REQUEST['dealno'])){
 		$dealno = str_pad($_REQUEST['dealno'],6,"0", STR_PAD_LEFT);
-		$q = "select dealid from ".$dbPrefix.".tbmdeal where dealno = '$dealno'";
+		$q = "select dealid from $dbPrefix.tbmdeal where dealno = '$dealno'";
 		$dealid = executeSingleSelect($q);
 	}
 	$mm = date('m');; $yy = date('Y');
-	$dbPrefix_curr = "lksa".($mm < 4 ? ($yy - 1)."".substr($yy,-2) : $yy."".(substr($yy,-2)+1));
-	$dbPrefix_last = "lksa".($mm < 4 ? ($yy - 1)."".substr($yy-1,-2) : ($yy-1)."".(substr($yy-1,-2)+1));
+	$dbPrefix_curr = "$dbPrefix".($mm < 4 ? ($yy - 1)."".substr($yy,-2) : $yy."".(substr($yy,-2)+1));
+	$dbPrefix_last = "$dbPrefix".($mm < 4 ? ($yy - 1)."".substr($yy-1,-2) : ($yy-1)."".(substr($yy-1,-2)+1));
 
 	$q1 = "SELECT d.dealid, d.dealno,dealnm,d.city, d.state, d.centre, d.AnnualIncome, d.ProposalNo, d.refdealid, d.mobile, d.mobile2, DATE_FORMAT(d.closedt,'%d-%b-%y') as closedt, concat(d.add1, ' ', d.add2, ' ', d.area, ' ', d.tahasil) as address, DATE_FORMAT(d.hpexpdt, '%d-%b-%y') as hpexpdt, round(d.financeamt) as finance, round(d.roi,2) as roi, round(d.bankroi,2) as bankroi, round(d.totdueamt) as due, d.extracharges, round(d.collectionchrgs) as cc,  d.period, d.dealsts, DATE_FORMAT(d.bankduedt, '%d-%b-%y') as bankduedt, DATE_FORMAT(date_add(d.bankduedt, INTERVAL period-1 Month), '%d-%b-%y') as bankexpdt, DATE_FORMAT(d.HPDt, '%d-%b-%y') as hpdate, DATE_FORMAT(d.StartDueDt,'%d-%b-%y') as startdt, d.profession, d.annualincome, round(d.CostOfVhcl) as cost, round(d.Marginmoney) as margin, round(d.Marginmoney/d.CostofVhcl*100,1) as permargin, d.active, d.closedealflg, d.closedealfinalflg, d.cancleflg, b.banknm as bank, br.bankbrnchnm as branch, brk.brkrnm as dealer
-	FROM ".$dbPrefix.".tbmdeal d join lksa.tbmsourcebankbrnch br join lksa.tbmsourcebank b join lksa.tbmbroker brk
+	FROM $dbPrefix.tbmdeal d join $dbPrefix.tbmsourcebankbrnch br join $dbPrefix.tbmsourcebank b join $dbPrefix.tbmbroker brk
 	on d.bankbrnchid = br.bankbrnchid and br.bankid = b.bankid and d.brkrid = brk.brkrid
 	WHERE dealid = '$dealid'";
 
-	$q2 = "SELECT DueDt as Date, round(DueAmt) as Due, round(CollectionChrgs) as CC, round(DueAmt+CollectionChrgs) as Total, (case WHEN Duedt <= curdate() THEN 1 ELSE 0 END) as eligible  FROM ".$dbPrefix.".tbmduelist where dealid = $dealid order by Year(DueDt), Month(DueDt)";
+	$q2 = "SELECT DueDt as Date, round(DueAmt) as Due, round(CollectionChrgs) as CC, round(DueAmt+CollectionChrgs) as Total, (case WHEN Duedt <= curdate() THEN 1 ELSE 0 END) as eligible  FROM $dbPrefix.tbmduelist where dealid = $dealid order by Year(DueDt), Month(DueDt)";
 
 	$q3 = "";
 
 	for ($d =2008; $d <= date('Y'); $d++){
-		$db = "lksa".$d."".str_pad($d+1-2000, 2, '0', STR_PAD_LEFT);
+		$db = "$dbPrefix".$d."".str_pad($d+1-2000, 2, '0', STR_PAD_LEFT);
 		$q3 .="
 		SELECT t1.sraid, b.brkrnm as sranm, t1.rcptdt as Date, round(sum(t2.rcptamt)) as Received, t1.rcptid, t1.rcptpaymode as mode, t1.CBFlg, t1.CBCCLFlg, t1.CCLflg, DATE_FORMAT(t1.cbdt, '%d-%b-%y') as cbdt, DATE_FORMAT(t1.ccldt, '%d-%b-%y') as  ccldt, t1.rmrk as Remarks, t1.cbrsn,
 	sum(case when dctyp = 101 then round(t2.rcptamt) ELSE 0 END) as EMI,
@@ -86,7 +86,7 @@ function deal(){
 	, v.reconind
 	FROM ".$db.".tbxdealrcpt t1 join ".$db.".tbxdealrcptdtl t2 on t1.rcptid = t2.rcptid and t1.dealid = $dealid
 	LEFT JOIN ".$db.".tbxacvoucher v on v.xrefid = t1.rcptid and v.rcptno = t1.rcptno and xreftyp = 1100 and acvchtyp = 4 and acxnsrno = 0
-	left join lksa.tbmbroker b on t1.sraid = b.brkrid group by t1.rcptid
+	left join $dbPrefix.tbmbroker b on t1.sraid = b.brkrid group by t1.rcptid
 	UNION";
 	}
 
@@ -99,21 +99,24 @@ function deal(){
 	) t order by Date, source
 	";
 
-	$q5 ="Select salesmannm, centre, mobile from lksa.tbmsalesman s join lksa.tbadealsalesman sa on s.salesmanid = sa.salesmanid and sa.dealid = $dealid";
+	$q5 ="Select salesmannm, centre, mobile from $dbPrefix.tbmsalesman s join $dbPrefix.tbadealsalesman sa on s.salesmanid = sa.salesmanid and sa.dealid = $dealid";
 
-	$q6 ="Select model, modelyy, chasis, engineno, make, rtoregno, insuexpdt, vhclcolour, siezeflg from lksa.tbmdealvehicle where dealid =  $dealid";
+	$q6 ="Select model, modelyy, chasis, engineno, make, rtoregno, insuexpdt, vhclcolour, siezeflg from $dbPrefix.tbmdealvehicle where dealid =  $dealid";
 
-	$q7 ="Select grtrnm as name, area, city, mobile, concat(add1, ' ', add2, ' ', area, ' ', tahasil) as address from lksa.tbmdealguarantors where dealid =  $dealid";
-
-	$q8 ="Select 'ECS' as type,  ecsamt as amt, apprvflg as approved, approverejectdt as dt, pdcrcvd from lksa.tbmdealecs where dealid =  $dealid
+	$q7 ="Select grtrnm as name, area, city, mobile, concat(add1, ' ', add2, ' ', area, ' ', tahasil) as address from $dbPrefix.tbmdealguarantors where dealid =  $dealid";
+/*
+	$q8 ="Select 'ECS' as type, ecsamt as amt, apprvflg as approved, approverejectdt as dt, pdcrcvd from $dbPrefix.tbmdealecs where dealid =  $dealid
 	UNION
-		Select 'NACH' as type, nacamt as amt, apprvflg as approved, approverejectdt as dt, pdcrcvd from lksa.tbmdealnac where dealid =  $dealid";
+		Select 'NACH' as type, nacamt as amt, apprvflg as approved, approverejectdt as dt, pdcrcvd from $dbPrefix.tbmdealnac where dealid =  $dealid";
+*/
+
+	$q8 = "SELECT case paytype WHEN 1 THEN 'PDC' WHEN 2 THEN 'ECS' When 3 THEN  'NACH' ELSE 'Nothing' End as type, DrownOn, TotAmt as amt, Remark, ApprvFlg as approved, ResponceDt as dt, pendingpdc, requiredpdc FROM $dbPrefix.tbmpaytype p LEFT JOIN $dbPrefix_curr.tbxpdcrcvry r ON p.dealid = r.dealid AND mm = MONTH(NOW()) WHERE p.dealid =  $dealid ORDER BY paytype DESC LIMIT 0,1 ";
 
 	$q9 ="SELECT n1.acxndt AS paidtobank, n2.nocdate as nocrcptdt, n2.nocno, n3.nocdate AS senttocustomerdt, n3.rtndate AS returndt, n3.rtnremark, n3.sraid, n3.senddate as senttosradt, b.brkrnm as sra
 	FROM tbadealnocpmnt n1
 	LEFT JOIN tbadealnoc n2 ON n1.dealid = n2.dealid and n2.dealid = $dealid
 	LEFT JOIN tbadealcustnoc AS n3 ON n1.dealid = n3.dealid and n3.dealid = $dealid
-	LEFT JOIN lksa.tbmbroker b ON n3.sraid = b.brkrid
+	LEFT JOIN $dbPrefix.tbmbroker b ON n3.sraid = b.brkrid
 	WHERE n1.dealid = $dealid";
 
 	$q10 = "SELECT a.dealid FROM `tbadealcatagory` AS a JOIN `tbmrcvrycatagory` AS b ON a.CatgId=b.pkid AND b.PkId=12 and a.dealid = $dealid";
@@ -128,29 +131,37 @@ function deal(){
 	SUM(CASE WHEN dctyp = 107 THEN Chrgsapplied - chrgsrcvd ELSE 0 END) AS Other
 	FROM tbmdealchrgs WHERE dealid = $dealid";
 
-	$q12 = "select sum(round(DueAmt+CollectionChrgs)) as due from lksa.tbmduelist where dealid = $dealid and Duedt <= curdate();";
+	$q12 = "select sum(round(DueAmt+CollectionChrgs)) as due from $dbPrefix.tbmduelist where dealid = $dealid and Duedt <= curdate();";
 
 	$q13 = "
 		select * from
-		(select mm, yy, fr.sraid, fr.callerid, b.brkrnm as sra, u.realname as caller, fr.rectagid_sra, st.description as tag_sra, fr.rectagid_caller, ct.description as tag_caller, fr.reccomment_sra, fr.reccomment_caller from $dbPrefix_curr.tbxfieldrcvry fr left join lksa.tbmbroker b on b.brkrid = fr.sraid left join ob_sa.tbmuser u on u.userid = fr.callerid left join lksa.tbmrecoverytags st on fr.rectagid_sra = st.tagid left join lksa.tbmrecoverytags ct on fr.rectagid_caller = ct.tagid where fr. dealid = $dealid
+		(select dd, mm, yy, fr.sraid, fr.rgid, fr.oddueamt, fr.dueamt, fr.callerid, b.brkrnm as sra, u.realname as caller, fr.rectagid_sra, st.description as tag_sra, fr.rectagid_caller, ct.description as tag_caller, fr.reccomment_sra, fr.reccomment_caller from $dbPrefix_curr.tbxfieldrcvry fr left join $dbPrefix.tbmbroker b on b.brkrid = fr.sraid left join ob_sa.tbmuser u on u.userid = fr.callerid left join $dbPrefix.tbmrecoverytags st on fr.rectagid_sra = st.tagid left join $dbPrefix.tbmrecoverytags ct on fr.rectagid_caller = ct.tagid where fr. dealid = $dealid
 		union
-		select mm, yy, fr.sraid, fr.callerid, b.brkrnm as sra, u.realname as caller, fr.rectagid_sra, st.description as tag_sra, fr.rectagid_caller, ct.description as tag_caller, fr.reccomment_sra, fr.reccomment_caller from $dbPrefix_last.tbxfieldrcvry fr left join lksa.tbmbroker b on b.brkrid = fr.sraid left join ob_sa.tbmuser u on u.userid = fr.callerid left join lksa.tbmrecoverytags st on fr.rectagid_sra = st.tagid left join lksa.tbmrecoverytags ct on fr.rectagid_caller = ct.tagid where fr. dealid = $dealid
-		) t order by yy desc, mm desc limit 0, 4";
+		 select dd, mm, yy, fr.sraid, fr.rgid, fr.oddueamt, fr.dueamt, fr.callerid, b.brkrnm as sra, u.realname as caller, fr.rectagid_sra, st.description as tag_sra, fr.rectagid_caller, ct.description as tag_caller, fr.reccomment_sra, fr.reccomment_caller from $dbPrefix_last.tbxfieldrcvry fr left join $dbPrefix.tbmbroker b on b.brkrid = fr.sraid left join ob_sa.tbmuser u on u.userid = fr.callerid left join $dbPrefix.tbmrecoverytags st on fr.rectagid_sra = st.tagid left join $dbPrefix.tbmrecoverytags ct on fr.rectagid_caller = ct.tagid where fr. dealid = $dealid
+		) t order by yy desc, mm desc limit 0, 5";
 
 	$q14 = "
-		SELECT t.dealid, t.dt, day(t.dt) as dd, date_format(t.dt,'%b') as mm, year(t.dt) as yy, t.type, t.callerid, u.realname AS caller, t.sraid, b.brkrnm AS sranm, date_format(t.followupdt,'%d-%b') as followupdt, t.remark FROM
+		SELECT t.dealid, t.dt, day(t.dt) as dd, date_format(t.dt,'%b') as mm, year(t.dt) as yy, t.type, t.callerid, u.realname AS caller, t.sraid, t.logtype, b.brkrnm AS sranm, date_format(t.followupdt,'%d-%b') as followupdt, t.remark FROM
 		(
-			SELECT dealid, followupdate AS dt, 'FIRSTCALL' AS `type`,  NULL AS callerid, Remark AS remark, NULL AS followupdt, NULL AS sraid FROM $dbPrefix_curr.tbxdealduedatefollowuplog WHERE dealid = $dealid
+			SELECT dealid, followupdate AS dt, 'FIRSTCALL' AS `type`, NULL AS callerid, Remark AS remark, NULL AS followupdt, NULL AS sraid, NULL as logtype FROM $dbPrefix_curr.tbxdealduedatefollowuplog WHERE dealid = $dealid
 			UNION
-			SELECT dealid, followupdate AS dt, 'CALLER' AS `type`,  webuserid AS callerid, FollowupRemark AS remark, NxtFollowupDate AS followupdt, NULL AS sraid FROM $dbPrefix_curr.tbxdealfollowuplog WHERE dealid = $dealid
+			SELECT dealid, followupdate AS dt, 'CALLER' AS `type`, webuserid AS callerid, FollowupRemark AS remark, NxtFollowupDate AS followupdt, NULL AS sraid, logtype FROM $dbPrefix_curr.tbxdealfollowuplog WHERE dealid = $dealid
 			UNION
-			SELECT dealid, followupdate AS dt, 'INTERNAL' AS `type`,  webuserid AS callerid, FollowupRemark AS remark, NULL AS followupdt, sraid FROM $dbPrefix_curr.tbxsrafollowuplog WHERE dealid = $dealid
+			SELECT dealid, followupdate AS dt, 'INTERNAL' AS `type`, webuserid AS callerid, FollowupRemark AS remark, NULL AS followupdt, sraid, NULL as logtype FROM $dbPrefix_curr.tbxsrafollowuplog WHERE dealid = $dealid
 		) t
 		LEFT JOIN ob_sa.tbmuser u ON t.callerid = u.userid
-		LEFT JOIN lksa.tbmbroker b ON t.sraid = b.brkrid AND b.brkrtyp = 2
+		LEFT JOIN $dbPrefix.tbmbroker b ON t.sraid = b.brkrid AND b.brkrtyp = 2
 	ORDER BY dt DESC";
 
-//	print_a($q4);
+	$q15 = "SELECT g.GdwnNm, (CASE WHEN dv.siezeFlg=0 THEN 'Released' WHEN dv.siezeFlg=-1 THEN 'Seized' END) AS STATUS,
+		VhclSzDT AS seizedt, VhclRlDt AS releasedt, VhclSaleDt AS saledt,  SaleAmt
+		FROM
+		$dbPrefix_curr.tbxvhclsz AS seize
+		JOIN $dbPrefix.tbmgdwn AS g ON g.GdwnId=seize.GdwnId AND seize.dealid = $dealid
+		JOIN $dbPrefix.tbmdealvehicle AS dv ON seize.DealId=dv.DealID
+		LEFT JOIN $dbPrefix_curr.tbxvhclrl AS rel ON seize.VhclSzRlId= rel.VhclSzRlId
+		LEFT JOIN $dbPrefix_curr.tbxszvhclsale AS sale ON  seize.VhclSzRlId= sale.VhclSzRlId
+		WHERE CclFlg = 0 ORDER BY seize.DealId,VhclSzDT DESC";
 
 	$sql = $q1;
 	$t1 = executeSelect($sql);
@@ -185,16 +196,16 @@ function deal(){
 	if($t1['row_count'] <= 0){
 		$payment = array("type"=>"PDC", "amt"=>0, "approved"=>0, "dt" => "", "pdcrcvd" => "");
 	} else
-		$payment = $t1['r'][0];
+	$payment = $t1['r'][0];
 
 	$t1 = executeSelect($q9); if($t1['row_count'] > 0){$noc = $t1['r'][0];}
-
 	$t1 = executeSelect($q10); if($t1['row_count'] > 0){$insurance = $t1['r'][0];}
-
 	$t1 = executeSelect($q11); if($t1['row_count'] > 0){$dealcharges = $t1['r'][0];}
 	$t1 = executeSelect($q12); if($t1['row_count'] > 0){$dueListSum = $t1['r'][0];}
 	$t1 = executeSelect($q13); if($t1['row_count'] > 0){$assignment = $t1['r'];}
 	$t1 = executeSelect($q14); if($t1['row_count'] > 0){$logs = $t1['r'];}
+	$t1 = executeSelect($q15); if($t1['row_count'] > 0){$seize = $t1['r'];}
+
 
 	$status =" <span style='color:";
 
@@ -442,20 +453,32 @@ function deal(){
 				<tr>
 					<td class="keys" valign="top"><label class="textsts">Type & Status</label></td>
 					<td class='red'><?=$payment['type']?>
-						<?if($payment['type'] != 'PDC'){?>(<?=($payment['approved']==2 ? 'Rejected' : ( $payment['approved']==1 ? 'Approved' : 'Pending') )?>)<?}?></td>
+						<?if($payment['type'] != 'PDC'){?> <?=($payment['approved']==2 ? 'REJECTED' : ( $payment['approved']==1 ? 'APPROVED' : 'Pending') )?> <?}?> for
+						<?=nf($payment['amt'])?></td>
 				</tr>
+				<?if($payment['approved'] == 2){?>
+					<td class="keys" valign="top"><label class="textsts">Remark</label></td>
+					<td class='red'><?=$payment['Remark']?></td>
+
+				<?}?>
 				<?if($payment['type'] != 'PDC'){?>
 				<tr>
 					<td class="keys" valign="top"><label class="textsts">Action Date</label></td>
 					<td><?=(is_null($payment['dt']) ? 'Pending' : date('d-M-y',strtotime($payment['dt'])))?></td>
 				</tr>
-				<?}
-				if($payment['approved']==2){?>
-				<tr>
-					<td class="keys" valign="top"><label class="textsts">PDC Received</label></td>
-					<td><?=($payment['pdcrcvd'] == 1 ? 'Yes' : 'No')?></td>
-				</tr>
 				<?}?>
+				<tr>
+					<td class="keys" valign="top"><label class="textsts">PDCs With Us</label></td>
+					<td><?=$payment['pendingpdc']?></td>
+				</tr>
+				<tr>
+					<td class="keys" valign="top"><label class="textsts">PDCs Required</label></td>
+					<td><?=$payment['requiredpdc']?></td>
+				</tr>
+				<tr>
+					<td class="keys" valign="top"><label class="textsts">Drawn On Bank</label></td>
+					<td><?=$payment['DrownOn']?></td>
+				</tr>
 			</tbody>
 		</table>
 	</fieldset>
@@ -499,6 +522,29 @@ function deal(){
 		</table>
 	</fieldset>
 
+	<fieldset><legend>Seizing History</legend>
+		<?if(isset($seize)){?>
+			<table class="adminlist" width="100%" cellspacing="1">
+				<thead>
+					<tr><th>Godown</th><th>Status</th><th>Seize Dt</th><th>Release Dt</th><th>Sale Dt</th><th>Amount</th></tr>
+				</thead>
+				<tbody>
+					<?foreach($seize as $row){?>
+					<tr>
+						<td><?=titleCase($row['GdwnNm'])?></td>
+						<td><?=$row['STATUS']?></td>
+						<td><?=df($row['seizedt'])?></td>
+						<td><?=df($row['releasedt'])?></td>
+						<td><?=df($row['saledt'])?></td>
+						<td><?=nf($row['SaleAmt'])?></td>
+					</tr>
+					<?}?>
+				</tbody>
+			</table>
+		<?}//if(isset Seizing)
+		else{?>No seizing history<?}?>
+	</fieldset>
+
 	<div class="clr"></div>
 
 	<div class="assignment">
@@ -506,12 +552,15 @@ function deal(){
 		<?if(isset($assignment)){?>
 			<table class="adminlist" width="100%" cellspacing="1">
 				<thead>
-					<tr><th>Month</th><th>SRA</th><th>Caller</th><th>SRA Tag</th><th>SRA Comment</th><th>Caller Tag</th><th>Caller Comment</th></tr>
+					<tr><th>Month</th><th>Bucket</th><th>OD</th><th>Total Due</th><th>SRA</th><th>Caller</th><th>SRA Tag</th><th>SRA Comment</th><th>Caller Tag</th><th>Caller Comment</th></tr>
 				</thead>
 				<tbody>
 					<?foreach($assignment as $row){?>
 					<tr>
-						<td><?=date('M', mktime(0, 0, 0, $row['mm'], 10))?>-<?=substr($row['yy'],-2)?></td>
+						<td><?=$row['dd']?>-<?=date('M', mktime(0, 0, 0, $row['mm'], 10))?>-<?=substr($row['yy'],-2)?></td>
+						<td class='textright'><?=$row['rgid']?></td>
+						<td class='textright'><?=nf($row['oddueamt'])?></td>
+						<td class='textright'><?=nf($row['dueamt'])?></td>
 						<td><?=titleCase($row['sra'])?></td>
 						<td><?=titleCase($row['caller'])?></td>
 						<td><?=titleCase($row['tag_sra'])?></td>
@@ -522,10 +571,10 @@ function deal(){
 					<?}?>
 				</tbody>
 			</table>
-			<?}//if(isset assignment)
-			else{?>
-				No Assigments since last financial year for this deal
-			<?}?>
+		<?}//if(isset assignment)
+		else{?>
+			No Assigments since last financial year for this deal
+		<?}?>
 	</div>
 
 	<div class="dealstatus">
@@ -663,7 +712,7 @@ function deal(){
 				<div class='logby'><?=($lg['type'] != 'FIRSTCALL' ? titleCase($lg['caller']) : '')?><?=($lg['type'] == 'INTERNAL' ? ' &#8594; '.titleCase($lg['sranm']) : '')?></div>
 				<div class='lognfd'><?=($lg['type'] != 'INTERNAL' ? 'NFD: '.$lg['followupdt'] : '&nbsp;')?></div>
 				<div style="clear:right"></div>
-				<div class='logcomments'><?=$lg['remark']?></div>
+				<div class='logcomments <?=($lg['logtype'] == 3 ? 'red' : '')?>'><?=$lg['remark']?></div>
 				<div class="clear"></div>
 			</div>
 		<?	$i++;

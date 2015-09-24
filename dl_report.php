@@ -255,7 +255,7 @@ function dl_report(){
 				<tbody>
 				<?switch($type){
 					case 0:
-						$itr = 1;
+						$itr = ($from + 1);
 						$totals = array();
 						foreach($columns as $c){
 							$totals[$c] = 0;
@@ -288,7 +288,7 @@ function dl_report(){
 						break;
 
 					case 1:
-						$itr = 1; $oldCentre ="";
+						$itr = ($from + 1); $oldCentre ="";
 						$totals = array();
 						foreach($columns as $c){
 							$totals[$c] = 0;
@@ -318,7 +318,7 @@ function dl_report(){
 						}
 					break;
 					case 2:
-						$slNo = 1;
+						$slNo = ($from + 1);
 						$totals = array();
 						foreach ($list as $deal){?>
 							<tr>
@@ -386,12 +386,15 @@ function dl_report(){
 				   <tfoot>
 					   <tr>
 						   <td colspan="<?=$colspan?>">
-							   No Records found!
+							   No Records found! (<?=$page?>)
 						   </td>
 					   </tr>
 				   </tfoot>
 			   </table>
 			<?}?>
+			<input name="sval" id="sval" value="<?=$sval?>" type="hidden">
+			<input name="page" id="page" value="<?=$page?>" type="hidden">
+			<input name="stype" id="stype" value="<?=$stype?>" type="hidden">
             </form>
             <div class="legend"><b>Lengends</b>
             <div class="red"><b>Employee Left Oraganization</b></div>

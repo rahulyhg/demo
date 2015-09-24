@@ -54,19 +54,14 @@ switch($task){
 				$user = $t1['r'][0];
                 $_SESSION['user_id']= $user['UserId'];
                 $_SESSION['user_name'] = $user['RealName'];
-                $_SESSION['usertype'] = $user['UserType'];
+                $_SESSION['UserType'] = $user['UserType'];
 				$_SESSION['DATE_FORMAT'] = "d-M-Y H:i:s";
 
-                /*if($_SESSION['UserType'] == 'Admin' || $_SESSION['UserType'] == 'SysAdmin')
+                if($_SESSION['UserType'] == 2)
 					$_SESSION['is_admin_login'] = true;
-                else
-                	$_SESSION['is_admin_login'] = false;
+				else
+					$_SESSION['is_admin_login'] = false;
 
-                if($_SESSION['UserType'] == 'SysAdmin')
-	                $_SESSION['is_sysadmin_login'] = true;
-                else
-                	$_SESSION['is_sysadmin_login'] = false;
-				*/
 				header("location: index.php?task=slist");
             } else{
             	$error="User Name & Password do not match..!";

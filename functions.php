@@ -242,15 +242,17 @@ function printHeader($title = 'Loksuvidha Reports', $menu='Y'){
 						<ul style="width: 144px;">
 							<li style="width: 144px;"><a class="icon-16-cpanel" href="index.php?task=deallist">Deal List</a></li>
 							<li class="separator" style="width: 144px;"><span></span></li>
-							<li style="width: 144px;"><a class="icon-16-user" href="index.php?task=generic&index=12">NOC Reoort</a></li>
+							<li style="width: 144px;"><a class="icon-16-user" href="index.php?task=generic&index=12">NOC Report</a></li>
 							<li style="width: 144px;"><a class="icon-16-user" href="index.php?task=generic&index=13">Bank Posting</a></li>
 							<li class="separator" style="width: 144px;"><span></span></li>
 							<li style="width: 144px;"><a class="icon-16-user" href="index.php?task=generic&index=16">Seized Vehicles</a></li>
 							<li class="separator" style="width: 144px;"><span></span></li>
-							<li style="width: 144px;"><a class="icon-16-user" href="index.php?task=generic&index=22">Employee List</a></li>
-							<li style="width: 144px;"><a class="icon-16-user" href="index.php?task=generic&index=23">Due Date List</a></li>
+							<li style="width: 144px;"><a class="icon-16-user" href="index.php?task=generic&index=21">Employee List</a></li>
+							<li style="width: 144px;"><a class="icon-16-user" href="index.php?task=generic&index=22">Due Date List</a></li>
 							<li class="separator" style="width: 144px;"><span></span></li>
-							<li style="width: 144px;"><a class="icon-16-user" href="index.php?task=dashboard">Dashboard</a></li>
+							<?if(isset($_SESSION['is_admin_login']) && $_SESSION['is_admin_login']){?>
+								<li style="width: 144px;"><a class="icon-16-user" href="index.php?task=dashboard">Dashboard</a></li>
+							<?}?>
 						</ul>
 					</li>
 					<li class="node "><a>Sales</a>
@@ -267,26 +269,34 @@ function printHeader($title = 'Loksuvidha Reports', $menu='Y'){
 					<li class="node "><a>Recovery</a>
 						<ul style="width: 144px;">
 							<li style="width: 144px;"><a class="icon-16-trash" href="index.php?task=od_report">OD Report</a></li>
+							<li style="width: 144px;"><a class="icon-16-trash" href="index.php?task=lastpayment">Last Payment</a></li>
 							<li class="separator" style="width: 144px;"><span></span></li>
 							<li style="width: 144px;"><a class="icon-16-article" href="index.php?task=per_field">Field Performance</a></li>
-							<li style="width: 144px;"><a class="icon-16-trash" href="index.php?task=generic&index=9">EMI Recovery</a></li>
 							<li style="width: 144px;"><a class="icon-16-trash" href="index.php?task=per_caller">Caller Performance</a></li>
 							<li class="separator" style="width: 144px;"><span></span></li>
-							<li style="width: 144px;"><a class="icon-16-article" href="index.php?task=generic&index=1">Monthly Recovery</a></li>
 							<li style="width: 144px;"><a class="icon-16-article" href="index.php?task=generic&index=7">Daily Recovery</a></li>
+							<li style="width: 144px;"><a class="icon-16-article" href="index.php?task=generic&index=1">Monthly Recovery</a></li>
+							<li style="width: 144px;"><a class="icon-16-trash" href="index.php?task=generic&index=9">EMI Recovery</a></li>
 							<li class="separator" style="width: 144px;"><span></span></li>
-							<li style="width: 144px;"><a class="icon-16-trash" href="index.php?task=generic&index=4">Caller Tag Entry</a></li>
-							<li style="width: 144px;"><a class="icon-16-trash" href="index.php?task=generic&index=5">SRA Tag Entry</a></li>
-							<li class="separator" style="width: 144px;"><span></span></li>
+							<li style="width: 144px;"><a class="icon-16-trash" href="index.php?task=generic&index=4">Tags</a></li>
+							<!--li style="width: 144px;"><a class="icon-16-trash" href="index.php?task=generic&index=5">SRA Tag Entry</a></li>
 							<li style="width: 144px;"><a class="icon-16-trash" href="index.php?task=generic&index=2">Caller Tag Summary</a></li>
-							<li style="width: 144px;"><a class="icon-16-trash" href="index.php?task=generic&index=3">SRA Tag Summary</a></li>
+							<li style="width: 144px;"><a class="icon-16-trash" href="index.php?task=generic&index=3">SRA Tag Summary</a></li-->
 							<li class="separator" style="width: 144px;"><span></span></li>
-							<li style="width: 144px;"><a class="icon-16-trash" href="index.php?task=generic&index=8">Cash Collection</a></li>
 							<li style="width: 144px;"><a class="icon-16-trash" href="index.php?task=generic&index=15">Regular Recovery</a></li>
-							<li style="width: 144px;"><a class="icon-16-trash" href="index.php?task=lastpayment">Last Payment</a></li>
 							<li class="separator" style="width: 144px;"><span></span></li>
 							<li style="width: 144px;"><a class="icon-16-trash" href="index.php?task=generic&index=18">Bouncing Report</a></li>
 							<li style="width: 144px;"><a class="icon-16-trash" href="index.php?task=generic&index=20">Non-Starter Cases</a></li>
+							<li style="width: 144px;"><a class="icon-16-trash" href="index.php?task=generic&index=28">Cash Receipts</a></li>
+							<li class="separator" style="width: 144px;"><span></span></li>
+							<?if(isset($_SESSION['is_admin_login']) && $_SESSION['is_admin_login']){?>
+								<li style="width: 144px;"><a class="icon-16-trash" href="index.php?task=generic&index=32">Collections</a></li>
+								<li style="width: 144px;"><a class="icon-16-trash" href="index.php?task=generic&index=29">Mobile View</a></li>
+								<li style="width: 144px;"><a class="icon-16-trash" href="index.php?task=generic&index=23">Comissions</a></li>
+								<li style="width: 144px;"><a class="icon-16-trash" href="index.php?task=generic&index=24">Bank Repayments</a></li>
+								<li style="width: 144px;"><a class="icon-16-trash" href="index.php?task=generic&index=25">Customer Repayments</a></li>
+
+							<?}?>
 
 						</ul>
 					</li>
