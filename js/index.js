@@ -71,9 +71,10 @@ function sort(field){
 	}
 }
 
-function refresh(){	
-
+function refresh(){
 	if(ge('hpdt'))	 hpdt = ge('hpdt').value; else hpdt = 0;
+	if(ge('expired'))	expired = ge('expired').value; else expired = 0;
+	if(ge('pt_status'))	 pt_status = ge('pt_status').value; else pt_status = 0;
 	if(ge('pt_nac'))	 pt_nac = ge('pt_nac').value; else pt_nac = 0;
 	if(ge('pt_ecs'))	 pt_ecs = ge('pt_ecs').value; else pt_ecs = 0;
 	if(ge('pt_pdc'))	 pt_pdc = ge('pt_pdc').value; else pt_pdc = 0;
@@ -82,6 +83,7 @@ function refresh(){
 	if(ge('pdcind'))	 pdcind = ge('pdcind').value; else pdcind = 0;
 	if(ge('bucket'))	 bucket = ge('bucket').value; else bucket = "";
 	if(ge('duedt'))	 duedt = ge('duedt').value; else duedt = "";
+	if(ge('dodt'))	 dodt = ge('dodt').value; else dodt = 0;
 	if(ge('mm'))	 mm = ge('mm').value; else mm = 0;
 	if(ge('dd'))	 dd = ge('dd').value; else dd = 0;
 	if(ge('dealer'))	 dealer = ge('dealer').value; else dealer = 0;
@@ -94,13 +96,16 @@ function refresh(){
 	if(ge('city')) 	city = ge('city').value; else city = "";
 	if(ge('state')) 	state = ge('state').value; else state = "";
 	if(ge('status')) 	status = ge('status').value; else status = 0;
+	if(ge('do_status')) 	do_status = ge('do_status').value; else do_status = 0;
 	if(ge('seizestatus')) 	seizestatus = ge('seizestatus').value; else seizestatus = 0;
 	if(ge('seizemm')) 	seizemm = ge('seizemm').value; else seizemm = 0;
 	if(ge('role')) 	role = ge('role').value; else role = 0;
 	if(ge('department')) 	department = ge('department').value; else department = 0;
 	if(ge('caller')) 	caller = ge('caller').value; else caller = 0;
 	if(ge('sra')) 	sra = ge('sra').value; else sra = 0;
+	if(ge('scheme')) 	scheme = ge('scheme').value; else scheme = 0;
 
+	
 	if(ge('rec_emi')) 	rec_emi = ge('rec_emi').value; else rec_emi = 0;
 	if(ge('bckt')) 	bckt = ge('bckt').value; else bckt = 0;
 	
@@ -120,7 +125,7 @@ function refresh(){
 	if(ge('limit')) 	limit = ge('limit').value; else limit = 30;
 	if(ge('page')) page = ge('page').value;
 
-	var url = btoa("hpdt="+ hpdt +"&pt_nac=" + pt_nac +"&pt_ecs=" + pt_ecs +"&pt_pdc=" + pt_pdc + "&pdcind=" + pdcind +"&nacind=" + nacind +"&ecsind=" + ecsind +"&pdcind=" + pdcind +"&bucket=" + bucket + "&branch=" + branch + "&status=" + status +"&bouncingstatus=" + bouncingstatus + "&paytype=" + paytype + "&rcptpaytype=" + rcptpaytype + "&chduedt=" + chduedt + "&duedt=" + duedt + "&centre=" + centre + "&reccentre=" + reccentre + "&dealer=" + dealer +"&salesman=" + salesman + "&caller=" + caller + "&sra=" + sra + "&disbursed=" + disbursed +"&salesmanid="+ salesmanid + "&period="+ period  + "&city=" + city + "&state=" + state + "&status=" + status + "&seizemm=" + seizemm + "&role=" + role + "&department=" + department + "&seizestatus=" + seizestatus + "&rec_emi=" + rec_emi +"&bckt=" + bckt +"&fromdt=" + fromdt + "&todt=" + todt + "&mm=" +mm + "&dd=" +dd + "&index=" + index + "&page=" + page + "&limit=" + limit +"&sval=" + sval + "&stype=" + stype);
+	var url = btoa("hpdt="+ hpdt + "&dodt=" + dodt + "&do_status=" + do_status + "&expired=" + expired + "&pt_nac=" + pt_nac +"&pt_ecs=" + pt_ecs +"&pt_pdc=" + pt_pdc + "&pt_status=" + pt_status + "&pdcind=" + pdcind +"&nacind=" + nacind +"&ecsind=" + ecsind +"&pdcind=" + pdcind +"&bucket=" + bucket + "&branch=" + branch + "&status=" + status +"&bouncingstatus=" + bouncingstatus + "&paytype=" + paytype + "&scheme=" +  scheme + "&rcptpaytype=" + rcptpaytype + "&chduedt=" + chduedt + "&duedt=" + duedt + "&centre=" + centre + "&reccentre=" + reccentre + "&dealer=" + dealer +"&salesman=" + salesman + "&caller=" + caller + "&sra=" + sra + "&disbursed=" + disbursed +"&salesmanid="+ salesmanid + "&period="+ period  + "&city=" + city + "&state=" + state + "&status=" + status + "&seizemm=" + seizemm + "&role=" + role + "&department=" + department + "&seizestatus=" + seizestatus + "&rec_emi=" + rec_emi +"&bckt=" + bckt +"&fromdt=" + fromdt + "&todt=" + todt + "&mm=" +mm + "&dd=" +dd + "&index=" + index + "&page=" + page + "&limit=" + limit +"&sval=" + sval + "&stype=" + stype);
 	j_query("#content-table").empty().html('<center>&nbsp;<br><img src="images/ajax-loader2.gif" style="border:none;" /><br>&nbsp;</center>');
 	window.location.assign("index.php?task=generic&url="+url);
 }
@@ -192,11 +197,12 @@ function refreshDashboard(){
 
 function callSEReport(){
 	if(ge('centre'))	centre = ge('centre').value; else centre = '';
+	if(ge('region'))	region = ge('region').value; else region = '';
 	if(ge('salesmanid')) 	salesmanid = ge('salesmanid').value; else salesmanid = 0;
 	if(ge('zeroDeals')) 	zeroDeals = ge('zeroDeals').value; else zeroDeals = 0;
 	if(ge('type')) 	type = ge('type').value; else type = 0;
 	
-	var url = btoa("&centre=" + centre + "&salesmanid="+ salesmanid  + "&zeroDeals=" + zeroDeals + "&type=" + type);
+	var url = btoa("&centre=" + centre + "&region=" + region + "&salesmanid="+ salesmanid  + "&zeroDeals=" + zeroDeals + "&type=" + type);
 	j_query("#content-table").empty().html('<center>&nbsp;<br><img src="images/ajax-loader2.gif" style="border:none;" /><br>&nbsp;</center>');
 	window.location.assign("index.php?task=se_report&url="+url);
 }
@@ -227,6 +233,7 @@ function call_per_field(){
 	if(ge('hpdt'))	hpdt = ge('hpdt').value; else hpdt = 2;
 	if(ge('centre'))	centre = ge('centre').value;	else centre = "";
 	if(ge('state'))	state = ge('state').value;	else state = "";
+	if(ge('cat'))	cat = ge('cat').value;	else cat = "";
 
 	if(ge('bucket'))	bucket = ge('bucket').value; else bucket = -1;
 	if(ge('expired'))	expired = ge('expired').value; else expired = 0;
@@ -244,7 +251,7 @@ function call_per_field(){
 	if(ge('limit')) limit = ge('limit').value; else limit = 30;
 	if(ge('page')) page = ge('page').value; else page = 1;
 
-	var url = btoa("&hpdt=" + hpdt + "&centre=" + centre + "&state=" + state + "&sraid="+ sraid + "&rc_sraid="+ rc_sraid + "&active=" + active + "&dd=" + dd + "&ason=" + ason + "&by=" + by + "&type=" + type + "&bucket=" + bucket +"&expired=" + expired + "&sratag="+ sratag + "&callertag="+ callertag + "&compare=" + compare + "&page=" + page + "&limit=" + limit +"&sval=" + sval + "&stype=" + stype);
+	var url = btoa("&hpdt=" + hpdt + "&centre=" + centre + "&state=" + state + "&sraid="+ sraid + "&rc_sraid="+ rc_sraid + "&active=" + active + "&dd=" + dd + "&ason=" + ason + "&by=" + by + "&type=" + type + "&bucket=" + bucket +"&expired=" + expired + "&sratag="+ sratag + "&callertag="+ callertag + "&compare=" + compare + "&cat=" + cat + "&page=" + page + "&limit=" + limit +"&sval=" + sval + "&stype=" + stype);
 	j_query("#content-table").empty().html('<center>&nbsp;<br><img src="images/ajax-loader2.gif" style="border:none;" /><br>&nbsp;</center>');
 	window.location.assign("index.php?task=per_field&url="+url);
 }
@@ -255,6 +262,7 @@ function call_per_caller(){
 	if(ge('hpdt'))	hpdt = ge('hpdt').value; else hpdt = 2;
 	if(ge('centre'))	centre = ge('centre').value;	else centre = "";
 	if(ge('state'))	state = ge('state').value;	else state = "";
+	if(ge('cat'))	cat = ge('cat').value;	else cat = "";
 
 	if(ge('bucket'))	bucket = ge('bucket').value; else bucket = -1;
 	if(ge('expired'))	expired = ge('expired').value; else expired = 0;
@@ -272,7 +280,7 @@ function call_per_caller(){
 	if(ge('limit')) limit = ge('limit').value; else limit = 30;
 	if(ge('page')) page = ge('page').value; else page = 1;
 
-	var url = btoa("&hpdt=" + hpdt + "&centre=" + centre + "&state=" + state + "&callerid="+ callerid + "&rc_sraid="+ rc_sraid + "&active=" + active + "&dd=" + dd + "&ason=" + ason + "&type=" + type + "&bucket=" + bucket +"&expired=" + expired + "&sratag="+ sratag + "&callertag="+ callertag +"&compare=" + compare  
+	var url = btoa("&hpdt=" + hpdt + "&centre=" + centre + "&state=" + state + "&callerid="+ callerid + "&rc_sraid="+ rc_sraid + "&active=" + active + "&dd=" + dd + "&ason=" + ason + "&type=" + type + "&bucket=" + bucket +"&expired=" + expired + "&sratag="+ sratag + "&callertag="+ callertag +"&compare=" + compare  + "&cat=" + cat
 	+ "&page=" + page + "&limit=" + limit +"&sval=" + sval + "&stype=" + stype);
 	j_query("#content-table").empty().html('<center>&nbsp;<br><img src="images/ajax-loader2.gif" style="border:none;" /><br>&nbsp;</center>');
 	window.location.assign("index.php?task=per_caller&url="+url);

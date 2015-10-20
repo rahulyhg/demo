@@ -43,17 +43,18 @@ $dbPrefix_curr = "lksa".($mm < 4 ? ($yy - 1)."".substr($yy,-2) : $yy."".(substr(
 switch($switch){
 
 	case 1: //Update Recovery details - OD, Total amount, SRA and REC Flag in field recovery
+		echo "#Update Recovery details - OD, Total amount, SRA and REC Flag in field recovery";
 		$q = "UPDATE ".$dbPrefix_curr.".tbxfieldrcvry fr JOIN (SELECT dealid, sraid, SUM(odAmt) AS odAmt, SUM(tot) AS tot FROM (SELECT r.dealid, r.sraid, SUM(CASE WHEN rd.DcTyp IN(101,102,111) THEN rd.RcptAmt END) AS odAmt, SUM(rd.RcptAmt) AS tot
 		FROM ".$dbPrefix_curr.".tbxdealrcpt AS r JOIN ".$dbPrefix_curr.".tbxdealrcptDtl AS rd
-		ON r.RcptId = rd.RcptId WHERE MONTH(r.RcptDt) = $mm AND r.RcptPayMode=1 AND r.cbFlg=0 AND r.cclFlg=0
-		GROUP BY r.dealid, r.sraid ORDER BY r.dealid, odAmt DESC, r.sraid) t GROUP BY dealid) AS rt
-		ON fr.dealid = rt.dealid  AND fr.mm = $mm
+		ON r.RcptId = rd.RcptId WHERE MONTH(r.RcptDt) = MONTH(NOW()) AND r.RcptPayMode=1 AND r.cbFlg=0 AND r.cclFlg=0
+		GROUP BY r.dealid, r.sraid ORDER BY r.dealid, odAmt DESC, r.sraid) t GROUP BY dealid having odAmt >= 450) AS rt
+		ON fr.dealid = rt.dealid  AND fr.mm = MONTH(NOW())
 		SET fr.rec_sraid = rt.sraid, fr.rec_od = IFNULL(rt.odamt,0), fr.rec_total = IFNULL(rt.tot,0), fr.rec_flg = 1;";
-
 		print_a($q);
 		break;
 
 	case 2: // Update Seize Flag into field recovery
+		echo "#Update Seize Flag into field recovery";
 		$q = "UPDATE ".$dbPrefix_curr.".tbxfieldrcvry fr JOIN ".$dbPrefix.".tbadealcatagory c on fr.dealid = c.dealid and fr.mm = $mm and c.catgid = 25
 		SET fr.catid = 25, fr.rec_flg = 2;";
 		print_a($q);
@@ -62,7 +63,7 @@ switch($switch){
 	case 3: // Build Query to check receipt
 		$dt = date('Y-m-d H:s:i');
 		$d = date('d', strtotime($dt));
-		echo "#As On: $dt";
+		echo "#As On: $dt - Build query to Check receipts";
 		//(AsOn, DealId, DealNo, DealNm, Centre, Area, City, FY, HPDt, HPExpDt, FinanceAmt, Period, StartDueDt, SalesmanNm, EMI, EMI_TD, EMI_Rec, EMI_Due, Bucket, Othr_Due, Tot_Due, Clearing_Chrges, Chq_Boucing_Chrges, Penalty_Chrges, Seizing_Chrges, Other_Chrges)
 		$q = "insert into ".$dbPrefix_curr.".tbxbucketwisedue
 		(AsOn, DealId, DealNo, DealNm, Centre, Area, City, FY, HPDt, HPExpDt, FinanceAmt, Period, StartDueDt, SalesmanNm, EMI, EMI_TD, EMI_Rec, EMI_Due, Bucket, Othr_Due, Tot_Due, Clearing_Chrges, Chq_Boucing_Chrges, Penalty_Chrges, Seizing_Chrges, Other_Chrges, category, model)
@@ -124,6 +125,8 @@ switch($switch){
 
 	case 4: //Update last receipt details from receipts table into tbxbucketwisedue table
 		//Taking only active SRA and Igonoring direct as well as null SRAs
+		echo "#Update last receipt details from receipts table into tbxbucketwisedue table";
+
 		$q = "UPDATE ".$dbPrefix_curr.".tbxbucketwisedue h, (select l.dealid, l.DT, l.AMT, l.SRA from
 		(	SELECT t.dealid, MAX(rcptdt) AS DT, AMT, SRA FROM (
 			SELECT Y, dealid, rcptdt, amt, sra FROM (";
@@ -141,6 +144,7 @@ switch($switch){
 		break;
 
 	case 5: //Update tbxbucketwisedue - set recovery information for last month - Recovery status, recovery OD amount, total Amount
+		echo "#Update tbxbucketwisedue - set recovery information for last month - Recovery status, recovery OD amount, total Amount";
 
 		$q = "UPDATE ".$dbPrefix_curr.".tbxbucketwisedue h, ".$dbPrefix_curr.".tbxfieldrcvry fr
 		set h.rec_flg = fr.rec_flg,
@@ -154,6 +158,8 @@ switch($switch){
 		break;
 
 	case 6: //Update tbxbucketwisedue - set recovery information for last month - recovery sra
+		echo "#Update tbxbucketwisedue - set recovery information for last month - recovery sra";
+
 		$q = "UPDATE ".$dbPrefix_curr.".tbxbucketwisedue h, ".$dbPrefix_curr.".tbxfieldrcvry fr, ".$dbPrefix.".tbmbroker b
 		set h.rec_sra = b.brkrnm
 		where h.ason = '$dtdt' and mm = $mm and h.dealid = fr.dealid and fr.rec_sraid = b.brkrid and b.brkrtyp = 2;";
@@ -163,6 +169,8 @@ switch($switch){
 		break;
 
 	case 7: //Update tbxbucketwisedue - set recovery information for last month - assigned sra, assigned caller
+		echo "#Update tbxbucketwisedue - set recovery information for last month - assigned sra, assigned caller";
+
 		$q = "UPDATE ".$dbPrefix_curr.".tbxbucketwisedue h, ".$dbPrefix_curr.".tbxfieldrcvry fr, ".$dbPrefix.".tbmbroker b, ".$dbPrefix_user.".tbmuser u
 		set h.sranm = b.brkrnm,
 		h.callernm = u.realname
@@ -173,6 +181,7 @@ switch($switch){
 		break;
 
 	case 8: //Update tbxbucketwisedue - set recovery information for last month - sra comment and caller comment
+		echo "#Update tbxbucketwisedue - set recovery information for last month - sra comment and caller comment";
 
 		$q = "UPDATE ".$dbPrefix_curr.".tbxbucketwisedue h, ".$dbPrefix_curr.".tbxfieldrcvry fr
 		set
@@ -186,6 +195,7 @@ switch($switch){
 
 
 	case 9: //Update tbxbucketwisedue - set recovery information for last month - SRA Tag
+		echo "#Update tbxbucketwisedue - set recovery information for last month - SRA Tag";
 
 		$q = "UPDATE ".$dbPrefix_curr.".tbxbucketwisedue h, ".$dbPrefix_curr.".tbxfieldrcvry fr, ".$dbPrefix.".tbmrecoverytags t
 		set h.rectag_sra = t.description
@@ -197,6 +207,7 @@ switch($switch){
 
 
 	case 10: //Update tbxbucketwisedue - set recovery information for last month - Caller Tag
+		echo "#Update tbxbucketwisedue - set recovery information for last month - Caller Tag";
 
 		$q = "UPDATE ".$dbPrefix_curr.".tbxbucketwisedue h, ".$dbPrefix_curr.".tbxfieldrcvry fr, ".$dbPrefix.".tbmrecoverytags t
 		set h.rectag_caller = t.description
@@ -205,28 +216,32 @@ switch($switch){
 		break;
 
 	case 11: //See bucketwise number of deals for coming month
-		$q = "SELECT bucket, COUNT(*) FROM ".$dbPrefix_curr.".tbxbucketwisedue WHERE ason = '$dtdt' GROUP BY bucket";
+		echo "#See bucketwise number of deals for coming month";
+		$q = "SELECT bucket, COUNT(*) FROM ".$dbPrefix_curr.".tbxbucketwisedue WHERE ason = '$dtdt' and category != 25 GROUP BY bucket";
 		print_a($q);
 		break;
 
 	case 12: //Get all deal for field recovery table
-		$q = "SELECT COUNT(*) FROM $dbPrefix_curr.tbxbucketwisedue WHERE ason = '$dtdt' AND bucket > 0 AND bucket < 36";
+		echo "#Get all deal for field recovery table";
+		$q = "SELECT COUNT(*) FROM $dbPrefix_curr.tbxbucketwisedue WHERE ason = '$dtdt' AND category != 25 AND bucket > 0 AND bucket < 36";
 		print_a($q);
 		break;
 
 	case 13://Get all deal in bucket 1 group by their due day of the month
+		echo "#Get all deal in bucket 1 group by their due day of the month";
 		$q = "SELECT DAY(startduedt), bucket, COUNT(*) FROM $dbPrefix_curr.tbxbucketwisedue WHERE ason = '$dtdt' AND bucket = 1 GROUP BY bucket, DAY(startduedt)";
 		print_a($q);
 		break;
 
-
-	case 14://Get the list
-		$q = "SELECT Dealid, dealno AS DealNo, dealnm AS Customer, Centre, `Area`, City, FY, HpDt, hpexpdt AS Expriy_Dt, FinanceAmt, Period, startduedt AS START_DUE_DT, SalesmanNm AS Salesman, EMI, EMI_DUE, Bucket, Tot_Due AS Total_Due, Category, LastPaymentDt AS Last_Payment_Dt, lastpaymentamt AS Last_Payment_Amt, lastpaymentsra AS Last_Payment_To, Model, sranm AS Assigned_SRA, callernm AS Assigned_Caller, rec_flg AS Recovered_Last_Month, rec_sra AS Recovery_BY, rec_od AS Recovered_OD, rec_total AS Recovered_Total, Rectag_Sra, Rectag_Caller  FROM $dbPrefix_curr.tbxbucketwisedue WHERE ason = '$dtdt' AND bucket > 0 AND bucket <= 36";
+	case 14://Get the final list for assignment
+		echo "#Get the final list for assignment (Not taking seized vehicles";
+		$q = "SELECT Dealid, dealno AS DealNo, dealnm AS Customer, Centre, `Area`, City, FY, HpDt, hpexpdt AS Expriy_Dt, FinanceAmt, Period, startduedt AS START_DUE_DT, SalesmanNm AS Salesman, EMI, EMI_DUE, Bucket, Tot_Due AS Total_Due, Category, LastPaymentDt AS Last_Payment_Dt, lastpaymentamt AS Last_Payment_Amt, lastpaymentsra AS Last_Payment_To, Model, sranm AS Assigned_SRA, callernm AS Assigned_Caller, rec_flg AS Recovered_Last_Month, rec_sra AS Recovery_BY, rec_od AS Recovered_OD, rec_total AS Recovered_Total, Rectag_Sra, Rectag_Caller  FROM $dbPrefix_curr.tbxbucketwisedue WHERE ason = '$dtdt' AND category != 25 AND bucket > 0 AND bucket <= 36";
 		print_a($q);
 		break;
 
 	case 15://Get all SRAs with their ids
-		$q = "SELECT brkrnm, brkrid FROM lksa.tbmbroker WHERE active = 2 AND brkrtyp = 2";
+		echo "#Get all SRAs with their ids";
+		$q = "SELECT brkrnm, brkrid, centre FROM lksa.tbmbroker WHERE active = 2 AND brkrtyp = 2";
 		print_a($q);
 		break;
 
@@ -323,23 +338,6 @@ ON rt.dealid = due.dealid) as d set tr.odrecovered = d.due where tr.pkid = $pkid
 
 		echo "<br>=============================DONE=============================";
 		break;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 	case 203: // Build query to generate tbxPHPField recovery Table
 		$dt_arr = array(

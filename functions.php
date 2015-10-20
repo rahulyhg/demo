@@ -259,10 +259,12 @@ function printHeader($title = 'Loksuvidha Reports', $menu='Y'){
 						<ul style="width: 118px;">
 							<li style="width: 118px;"><a class="icon-16-menu" href="index.php?task=se_report">Sales Report</a></li>
 							<li style="width: 118px;"><a class="icon-16-menu" href="index.php?task=dl_report">Dealer Report</a></li>
+							<li style="width: 118px;"><a class="icon-16-menu" href="index.php?task=generic&index=40">Proposals</a></li>
 							<li style="width: 118px;"><a class="icon-16-menu" href="index.php?task=generic&index=6">Disbursements</a></li>
 							<li style="width: 118px;"><a class="icon-16-trash" href="index.php?task=generic&index=10">Pending Vehicles</a></li>
 							<li class="separator" style="width: 144px;"><span></span></li>
 							<li style="width: 118px;"><a class="icon-16-trash" href="index.php?task=generic&index=0">Pay Instruments</a></li>
+							<li style="width: 118px;"><a class="icon-16-trash" href="index.php?task=generic&index=39">NACH/ECS Report</a></li>
 							<li style="width: 118px;"><a class="icon-16-trash" href="index.php?task=generic&index=11">Due List Report</a></li>
 						</ul>
 					</li>
@@ -288,14 +290,14 @@ function printHeader($title = 'Loksuvidha Reports', $menu='Y'){
 							<li style="width: 144px;"><a class="icon-16-trash" href="index.php?task=generic&index=18">Bouncing Report</a></li>
 							<li style="width: 144px;"><a class="icon-16-trash" href="index.php?task=generic&index=20">Non-Starter Cases</a></li>
 							<li style="width: 144px;"><a class="icon-16-trash" href="index.php?task=generic&index=28">Cash Receipts</a></li>
+							<li style="width: 144px;"><a class="icon-16-trash" href="index.php?task=generic&index=35">Closed Vehicles</a></li>
 							<li class="separator" style="width: 144px;"><span></span></li>
 							<?if(isset($_SESSION['is_admin_login']) && $_SESSION['is_admin_login']){?>
 								<li style="width: 144px;"><a class="icon-16-trash" href="index.php?task=generic&index=32">Collections</a></li>
 								<li style="width: 144px;"><a class="icon-16-trash" href="index.php?task=generic&index=29">Mobile View</a></li>
 								<li style="width: 144px;"><a class="icon-16-trash" href="index.php?task=generic&index=23">Comissions</a></li>
-								<li style="width: 144px;"><a class="icon-16-trash" href="index.php?task=generic&index=24">Bank Repayments</a></li>
-								<li style="width: 144px;"><a class="icon-16-trash" href="index.php?task=generic&index=25">Customer Repayments</a></li>
-
+								<li style="width: 144px;"><a class="icon-16-trash" href="index.php?task=generic&index=37">Bank Repayments</a></li>
+								<li style="width: 144px;"><a class="icon-16-trash" href="index.php?task=generic&index=24">Customer Repayments</a></li>
 							<?}?>
 
 						</ul>

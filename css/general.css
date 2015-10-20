@@ -603,6 +603,8 @@ table.adminlist tbody tr.unassigned, .unassigned {background-color:#CDB79E !impo
 table.adminlist tbody tr.seized, .seized, .seized a {background-color:#000 !important; color:#fff !important;}/*Seized*/
 table.adminlist tbody tr.insurance, .insurance, .insurance a {background-color:#FF0000 !important;; color:#fff}/*Insurance*/
 /*table.adminlist tbody tr.write-off, .write-off, .write-off a {background-color:#EE3A8C !important;; color:#fff} Write-Off*/
+table.adminlist tbody tr.non-starter, .non-starter, .non-starter a {background-color:#EE3A8C !important;; color:#fff} Write-Off
+
 table.adminlist tbody tr.police-station, .police-station, .police-station a {background-color:#BC8F8F !important;; color:#fff}/*Vehicle in Police Station*/
 table.adminlist tbody tr.multiple, .multiple, .multiplr a{background-color:#8B7D68 !important;; /*burlywood*/ color:#fff}/*Money taken by multiple people*/
 a.alternate {font-weight:bold;margin: 0 3 px;}

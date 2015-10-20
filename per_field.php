@@ -52,6 +52,7 @@ function per_field(){
 	$expired = isset($_REQUEST['expired']) ? $_REQUEST['expired'] : 0;
 	$callertag = isset($_REQUEST['callertag']) ? $_REQUEST['callertag'] : 0;
 	$sratag = isset($_REQUEST['sratag']) ? $_REQUEST['sratag'] : 0;
+	$cat = isset($_REQUEST['cat']) ? $_REQUEST['cat'] : 0;
 	/**** Inputs **********/
 
 	/****** Pagination & Sorting *************/
@@ -99,7 +100,7 @@ function per_field(){
 		array(date('Y-M',strtotime('-3 month', strtotime($fd))), date('m',strtotime('-3 month', strtotime($fd))), date('Y', strtotime('-3 month', strtotime($fd)))),
 		array(date('Y-M',strtotime('-4 month', strtotime($fd))), date('m',strtotime('-4 month', strtotime($fd))), date('Y', strtotime('-4 month', strtotime($fd)))),
 		array(date('Y-M',strtotime('-5 month', strtotime($fd))), date('m',strtotime('-5 month', strtotime($fd))), date('Y', strtotime('-5 month', strtotime($fd)))),
-//   		array(date('Y-M',strtotime('-6 month', strtotime($fd))), date('m',strtotime('-6 month', strtotime($fd))), date('Y', strtotime('-6 month', strtotime($fd))))
+  		array(date('Y-M',strtotime('-6 month', strtotime($fd))), date('m',strtotime('-6 month', strtotime($fd))), date('Y', strtotime('-6 month', strtotime($fd))))
 
    	);
 	$mm = $ason_options[$ason][1]; $yy = $ason_options[$ason][2];
@@ -165,6 +166,15 @@ function per_field(){
 					AND r.rcptdt between '$yy-$mm-01' and '".date('Y-m-t',strtotime(date("$yy-$mm-01")))."'
 					GROUP BY r.dealid having rcptamt >= ".$MIN_RECEIPT_AMT."
 			) AS t ON d.dealid = t.dealid WHERE d.mm = $mm ".$hp_options[$hpdt][1];
+
+			switch($cat){
+				case 0: //None
+					$q .= "";
+					break;
+				default:
+					$q .= " and d.catid = $cat";
+					break;
+			}
 
 			switch($dd){
 				case 0: //Both
@@ -238,6 +248,14 @@ function per_field(){
 					$q .= " AND tbmdeal.dealsts = 3 ";
 					break;
 			}
+			switch($cat){
+				case 0: //None
+					$q .= "";
+					break;
+				default:
+					$q .= " and d.catid = $cat";
+					break;
+			}
 
 			$q .= "
 			LEFT JOIN ".$dbPrefix.".tbmbroker b ON d.sraid = b.brkrid AND b.brkrtyp = 2
@@ -257,6 +275,8 @@ function per_field(){
 					) AS t1 JOIN ".$dbPrefix.".tbmbroker b
 					ON t1.sraid = b.brkrid AND b.brkrtyp = 2
 			) AS t ON d.dealid = t.dealid WHERE 1 ";
+
+
 
 			if($centre != "")
 				$q .= " AND ".($by == $BY_REC_CENTRE ? 'b.' : 'd.')."centre = '$centre' ";
@@ -481,6 +501,14 @@ function per_field(){
 		                         		<option value="<?=$tag['tagid']?>" <?=($sratag==$tag['tagid'] ? 'selected="selected"' : '')?>><?=$tag['description']?></option>
 	    	                     	<?}?>
 	    	                     	<option value="-1" <?=($sratag==-1 ? 'selected="selected"' : '')?>>Other</option>
+                            </select>
+
+                            <select name="cat" id="cat" class="inputbox" size="1" onchange="call_per_field();">
+								<option value= "0" <?=($cat== 0 ? 'selected="selected"' : '')?>>-Category-</option>
+                         		<option value="12" <?=($cat==12 ? 'selected="selected"' : '')?>>Insurance</option>
+                         		<option value="13" <?=($cat==13 ? 'selected="selected"' : '')?>>Police Station</option>
+                         		<option value="25" <?=($cat==25 ? 'selected="selected"' : '')?>>Seized</option>
+                         		<option value="26" <?=($cat==26 ? 'selected="selected"' : '')?>>Non-Starter</option>
                             </select>
                         </td>
                     </tr>
@@ -744,8 +772,8 @@ function per_field(){
 											$color = 'insurance';
 										else if ($deal['catid'] == 13) // Police Station
 											$color = 'police-station';
-										else if ($deal['catid'] == 24) // Write Off Cases
-											$color = 'write-off';
+										else if ($deal['catid'] == 26) // Non Starter Cases
+											$color = 'non-starter';
 										else if($deal['sra_cnt'] > 1) // Received by more than one person
 											$color = 'multiple';
 										else if($deal['rc_sraid'] != null && $deal['sraid'] != $deal['rc_sraid']) //Unassigned Case
@@ -766,11 +794,7 @@ function per_field(){
 										<td class="textleft"><?=$deal['area']?></td>
 										<td class="textleft"><?=$deal['callernm']?></td>
 										<td class="textleft"><?=$deal['sranm']?></td>
-										<?if($deal['rec_flg'] == 0){?>
-											<td class="textleft"><?=titleCase($deal['rc_sranm'])?></td>
-										<?}else{?>
-											<td class="textleft"><?=titleCase($deal['rec_sraid'])?></td>
-										<?}?>
+										<td class="textleft"><?=titleCase($deal['rc_sranm'])?></td>
 										<td class="textright"><?=nf($deal['emi'],0)?></td>
 										<td class="textright"><?=$deal['rgid']?></td>
 										<td class="textright"><?=nf($deal['oddueamt'],0)?></td>
@@ -958,7 +982,7 @@ function per_field(){
          		<tr><th class="textleft">Colour Coding</th>
 					<td class="seized center">Seized</td>
          			<td class="insurance center">Insurance Case</td>
-         			<td class="write-off center">Write Off Case</td>
+         			<td class="non-starter center">Non Starter</td>
          			<td class="police-station center">Vehicle in Police Station</td>
          			<td class="multiple center">Receipt Taken by multiple SRAs</td>
          			<td class="unassigned center">Recovered By Other SRA</td>

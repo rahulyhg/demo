@@ -97,7 +97,7 @@ function show_receipts(){
                     <td class="textright"><?=nf($deal['Penalty'])?></td>
                     <td class="textright"><?=nf($deal['Seizing'])?></td>
                     <td class="textright"><?=nf($deal['Other'])?></td>
-                    <td class="textright"><?=$deal['rcptpaymode']?></td>
+                    <td class="textleft"><?=$_SESSION['PAY_MODE'][$deal['rcptpaymode']]?></td>
                     <td class="textleft"><?=$deal['Remarks']?></td>
 				</tr>
 				<?

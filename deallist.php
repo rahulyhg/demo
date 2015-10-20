@@ -78,7 +78,7 @@ function deallist(){
 	);
 
     //Get List of all valid deals for centre for selected date period
-    $q = "SELECT sql_calc_found_rows d.pkid, d.pkid as rid, d.dealid, d.dealno, d.dealsts, d.dealnm, d.area, d.city as city, d.cancleflg, d.hpdt, d.financeamt, s.salesmanid as salesmanid, s.salesmannm as salesmannm, tcase(d.centre) as centre, s.active from ".$dbPrefix.".tbmdeal d join ".$dbPrefix.".tbadealsalesman a join ".$dbPrefix.".tbmsalesman s on d.dealid = a.dealid and a.salesmanid = s.salesmanid where 1 ";
+    $q = "SELECT sql_calc_found_rows d.pkid, d.pkid as rid, d.dealid, d.dealno, d.dealsts, d.dealnm, d.area, d.city as city, d.cancleflg, d.hpdt, d.hpexpdt, d.financeamt, s.salesmanid as salesmanid, s.salesmannm as salesmannm, tcase(d.centre) as centre, s.active from ".$dbPrefix.".tbmdeal d join ".$dbPrefix.".tbadealsalesman a join ".$dbPrefix.".tbmsalesman s on d.dealid = a.dealid and a.salesmanid = s.salesmanid where 1 ";
 
 	if($centre != "")
 		$q .= " AND d.centre = '$centre' ";
@@ -176,6 +176,7 @@ function deallist(){
                     <th nowrap="nowrap" class="textleft"><a href="javascript:sort('financeamt'); callListOfDeals();">Finance</a></th>
                     <th nowrap="nowrap" class="textleft"><a href="javascript:sort('salesmannm'); callListOfDeals();">Executive</a></th>
 					<th nowrap="nowrap" class="textleft"><a href="javascript:sort('hpdt'); callListOfDeals();">HP Date</a></th>
+					<th nowrap="nowrap" class="textleft"><a href="javascript:sort('hpexpdt'); callListOfDeals();">HP Exp</a></th>
 		        </tr>
             </thead>
             <? if($totalRows>0){
@@ -228,6 +229,7 @@ function deallist(){
 									<td class="textright"><?=nf($deal['financeamt'])?></td>
 									<td class="textleft <?=($deal['active']==1 ? 'red' :'')?>"><?=$deal['salesmannm']?></td>
 									<td class="textright"><? echo date('Y-m-d',strtotime($deal['hpdt']));?></td>
+									<td class="textright"><? echo date('Y-m-d',strtotime($deal['hpexpdt']));?></td>
 								</tr>
                             	<?
                             	$total +=  $deal['financeamt'];
@@ -252,6 +254,7 @@ function deallist(){
 								<th></th>
 								<th></td>
 								<th class="textright"><?=nf($total, true)?></th>
+								<th></th>
 								<th></th>
 								<th></th>
                             </tr>

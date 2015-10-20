@@ -82,8 +82,10 @@ function od_report(){
 	for($d = date('Y'); $d >= 2008; $d--){
 		$fy = substr($d,-2)."-".substr($d+1,-2);
 		$period_options[$c++] = array("FY:$fy"," d.fy='$fy' ", "$d-04-01", ($d+1)."-03-31");
-
 	}
+	$period_options[$c++] = array('Fresh', " d.hpdt >= '2014-04-01' ", date('2014-04-01', $strtime), date('Y-m-t'));
+	$period_options[$c++] = array('Old', " d.hpdt < '2014-04-01' ", date('2008-07-01'), date('2014-03-31'));
+
 
 	$hp_start_dt = $period_options[$period][2];
 	$hp_end_dt = $period_options[$period][3];
@@ -115,8 +117,7 @@ function od_report(){
 	   		sum(case when bucket >= 2.5 and bucket < 3.5 then 1 else 0 end) as B_3,
 	   		sum(case when bucket >= 3.5 and bucket < 4.5 then 1 else 0 end) as B_4,
 	   		sum(case when bucket >= 4.5 and bucket < 5.5  then 1 else 0 end) as B_5,
-	   		sum(case when bucket >= 5.5 and bucket < 6.5 then 1 else 0 end) as B_6,
-	   		sum(case when bucket >= 6.5 then 1 else 0 end) as B_7
+	   		sum(case when bucket >= 5.5 then 1 else 0 end) as B_6
 			FROM
 			( SELECT ";
 			break;
@@ -170,7 +171,7 @@ function od_report(){
 		for ($d =2008; $d <= date('Y'); $d++){
 			$db = "lksa".$d."".str_pad($d+1-2000, 2, '0', STR_PAD_LEFT);
 			$q .="
-			SELECT '".$d."', r.dealid, SUM(rd.rcptamt) AS rcptamt FROM ".$db.".tbxdealrcpt r JOIN ".$db.".tbxdealrcptdtl rd ON r.rcptid = rd.rcptid AND rd.dctyp IN (101,111) AND r.cclflg = 0 AND r.CBflg = 0 AND r.rcptdt between '$rcpt_start_dt' and '$rcpt_end_dt' GROUP BY r.dealid
+			SELECT '".$d."', r.dealid, SUM(rd.rcptamt) AS rcptamt FROM ".$db.".tbxdealrcpt r JOIN ".$db.".tbxdealrcptdtl rd ON r.rcptid = rd.rcptid AND rd.dctyp IN (101,102,111) AND r.cclflg = 0 AND r.CBflg = 0 AND r.rcptdt between '$rcpt_start_dt' and '$rcpt_end_dt' GROUP BY r.dealid
 			UNION";
 		}
 		$q = rtrim($q, "UNION");

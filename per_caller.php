@@ -50,6 +50,7 @@ function per_caller(){
 	$expired = isset($_REQUEST['expired']) ? $_REQUEST['expired'] : 0;
 	$callertag = isset($_REQUEST['callertag']) ? $_REQUEST['callertag'] : 0;
 	$sratag = isset($_REQUEST['sratag']) ? $_REQUEST['sratag'] : 0;
+	$cat = isset($_REQUEST['cat']) ? $_REQUEST['cat'] : 0;
 	/**** Inputs **********/
 
 	/****** Pagination & Sorting *************/
@@ -104,15 +105,18 @@ function per_caller(){
 		array(date('Y-M',strtotime('-3 month', strtotime($fd))), date('m',strtotime('-3 month', strtotime($fd))), date('Y', strtotime('-3 month', strtotime($fd)))),
    		array(date('Y-M',strtotime('-4 month', strtotime($fd))), date('m',strtotime('-4 month', strtotime($fd))), date('Y', strtotime('-4 month', strtotime($fd)))),
   		array(date('Y-M',strtotime('-5 month', strtotime($fd))), date('m',strtotime('-5 month', strtotime($fd))), date('Y', strtotime('-5 month', strtotime($fd)))),
-//   		array(date('Y-M',strtotime('-6 month', strtotime($fd))), date('m',strtotime('-6 month', strtotime($fd))), date('Y', strtotime('-6 month', strtotime($fd))))
+  		array(date('Y-M',strtotime('-6 month', strtotime($fd))), date('m',strtotime('-6 month', strtotime($fd))), date('Y', strtotime('-6 month', strtotime($fd))))
 
    	);
 	$mm = $ason_options[$ason][1]; $yy = $ason_options[$ason][2];
 	$dbPrefix_curr = "lksa".($mm < 4 ? ($yy - 1)."".substr($yy,-2) : $yy."".(substr($yy,-2)+1));
 
 	$hp_options = array(array("- HP Date -",""));
-	$hp_options[] = array("Fresh Bouncing", " AND d.hpdt > '2013-12-31' ");
-	$hp_options[] = array("Old", " AND d.hpdt < '2014-01-01'");
+	$hp_options[] = array("Team A", " AND d.hpdt > '2014-12-31'");
+	$hp_options[] = array("Team B", " AND d.hpdt between '2014-01-01' and '2014-12-31'");
+	$hp_options[] = array("Team C", " AND d.hpdt between '2012-01-01' and '2013-12-31'");
+	$hp_options[] = array("Legacy", " AND d.hpdt < '2012-01-01'");
+
 
 	for($z=1; $z<=6; $z++){
    		$hp_options []  = array(date('Y-M',strtotime("-$z month", strtotime($fd))), " AND d.hpdt between '".date('Y-m-01', strtotime("-$z month", strtotime($fd)))."' AND '".date('Y-m-t', strtotime("-$z month", strtotime($fd)))."' ");
@@ -167,6 +171,15 @@ function per_caller(){
 					AND r.rcptdt between '$yy-$mm-01' and '".date('Y-m-t',strtotime(date("$yy-$mm-01")))."'
 					GROUP BY r.dealid having rcptamt >= ".$MIN_RECEIPT_AMT."
 			) AS t ON d.dealid = t.dealid WHERE d.mm = $mm ".$hp_options[$hpdt][1];
+
+			switch($cat){
+				case 0: //None
+					$q .= "";
+					break;
+				default:
+					$q .= " and d.catid = $cat";
+					break;
+			}
 
 			switch($dd){
 				case 0: //Both
@@ -229,6 +242,14 @@ function per_caller(){
 					break;
 				case 2://Closed
 					$q .= " AND tbmdeal.dealsts = 3 ";
+					break;
+			}
+			switch($cat){
+				case 0: //None
+					$q .= "";
+					break;
+				default:
+					$q .= " and d.catid = $cat";
 					break;
 			}
 
@@ -459,6 +480,14 @@ function per_caller(){
 	    	                     	<option value="-1" <?=($sratag==-1 ? 'selected="selected"' : '')?>>Other</option>
                             </select>
 
+                            <select name="cat" id="cat" class="inputbox" size="1" onchange="call_per_caller();">
+								<option value= "0" <?=($cat== 0 ? 'selected="selected"' : '')?>>-Category-</option>
+                         		<option value="12" <?=($cat==12 ? 'selected="selected"' : '')?>>Insurance</option>
+                         		<option value="13" <?=($cat==13 ? 'selected="selected"' : '')?>>Police Station</option>
+                         		<option value="25" <?=($cat==25 ? 'selected="selected"' : '')?>>Seized</option>
+                         		<option value="26" <?=($cat==26 ? 'selected="selected"' : '')?>>Non-Starter</option>
+                            </select>
+
                         </td>
                     </tr>
                 </tbody>
@@ -473,7 +502,7 @@ function per_caller(){
                    		case 1:?>
 						<tr>
 							<th>SN</th>
-							<th class='textleft'>Calleing Agent</th>
+							<th class='textleft'>Calling Agent</th>
 							<?if($type == 1){?><th class='textleft'>State</th><th class='textleft'>Centre</th><?}?>
 							<th colspan="<?=$cols1?>">OPENING</th>
 							<th colspan="<?=$cols1?>">NEW</th>
@@ -705,7 +734,7 @@ function per_caller(){
 											$color = 'insurance';
 										else if ($deal['catid'] == 13) // Police Station
 											$color = 'police-station';
-										else if ($deal['catid'] == 24) // Write Off Cases
+										else if ($deal['catid'] == 26) // Non Starter Cases
 											$color = 'write-off';
 										else if($deal['dd'] == 1) //First Day of the month
 											$color = 'fd';
@@ -911,7 +940,7 @@ function per_caller(){
 				<tr><th class="">Colour Coding</th>
 					<td class="seized center">Seized</td>
          			<td class="insurance center">Insurance Case</td>
-         			<td class="write-off center">Write Off Case</td>
+         			<td class="non-starter center">Non Starter</td>
          			<td class="police-station center">Vehicle in Police Station</td>
          			<td class="fd center">Assigned On First Day</td>
          			<td class="dm center">Assigned During the Month</td></tr>

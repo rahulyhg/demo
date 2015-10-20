@@ -14,15 +14,24 @@ function se_report(){
 
     //$month = isset($_REQUEST['month']) && !empty($_REQUEST['month']) ? $_REQUEST['month'] : date('mY');
     $centre = isset($_REQUEST['centre']) ? $_REQUEST['centre'] : "";
+//    $state = isset($_REQUEST['state']) ? $_REQUEST['state'] : 0;
+
     $salesmanid = isset($_REQUEST['salesmanid']) ? $_REQUEST['salesmanid'] : 0;
 	$zero = isset($_REQUEST['zeroDeals']) ? $_REQUEST['zeroDeals'] : 0;
 	$active = isset($_REQUEST['active']) ? $_REQUEST['active'] : 0;
 	$type = isset($_REQUEST['type']) ? $_REQUEST['type'] : 0;
+	$region = isset($_REQUEST['region']) ? $_REQUEST['region'] : "";
 
     $q1 = "SELECT salesmanid, tcase(salesmannm) as salesmannm, active from ".$dbPrefix.".tbmsalesman where active != 3 and Department = 'SALES' order by active desc, salesmannm";
 	$t1 = executeSelect($q1);
 	if($t1['row_count'] > 0){
 		$salesmans = $t1['r'];
+	}
+
+    $q1 = "SELECT distinct region as region from ".$dbPrefix.".tbmcentre order by region asc";
+	$t1 = executeSelect($q1);
+	if($t1['row_count'] > 0){
+		$regions = $t1['r'];
 	}
 
     //Get all centers
@@ -63,7 +72,7 @@ function se_report(){
 
 	$c = 0;
 
-	$q = " SELECT tcase(s.centre) as centre, ".($type==1 ? " s.salesmanid, tcase(s.salesmannm) as salesmannm, s.Role, s.active,  " : "" )."";
+	$q = " SELECT tcase(c.region) as region, tcase(s.centre) as centre, ".($type==1 ? " s.salesmanid, tcase(s.salesmannm) as salesmannm, s.Role, s.active,  " : "" )."";
 		for($i=0; $i < $columnMonths; $i++){
 			$q .= " SUM(CASE WHEN hpdt BETWEEN '".date('Y-m-01', strtotime('-'.($i).' month', strtotime($fd))) ."' AND '".date('Y-m-t',strtotime('-'.($i).' month', strtotime($fd)))."' THEN 1 ELSE 0 END) AS `".$columns[$c++]."`,
 			";
@@ -83,9 +92,14 @@ function se_report(){
 		COUNT(d.dealid) AS Total
 		FROM ".$dbPrefix.".tbmsalesman s  JOIN ".$dbPrefix.".tbmdeal d JOIN ".$dbPrefix.".tbadealsalesman a
 		ON d.dealid = a.dealid AND d.cancleflg=0 AND a.salesmanid = s.salesmanid ".$salesman_clause."
+		JOIN lksa.tbmcentre c on s.centre = c.centrenm
 		WHERE 1 ".($centre != "" ? " AND s.centre = '$centre' " : ""). "
-		GROUP BY s.centre ".($type==1 ? ", s.salesmanid " : "")."
-		order by s.centre";
+		GROUP BY c.region, s.centre ".($type==1 ? ", s.salesmanid " : "")."";
+
+	if($region != "")
+		$q .=" having region = '$region' ";
+
+	$q .=" Order by c.region, s.centre";
 
 //	print_a($q);
 //	die();
@@ -113,6 +127,14 @@ function se_report(){
                             </select>
                         </td>
                         <td nowrap="nowrap">
+							<select name="region" id="region" class="inputbox" size="1" onchange="callSEReport();">
+                            <option value="" <? if($region ==""){?> selected="selected" <? }?>>- All Regions-</option>
+								<? // Populate Dropdown with values of Region field
+								foreach($regions as $c1){?>
+									<option value="<?=$c1['region']?>" <?if($region==$c1['region']){?> selected="selected" <?}?>><?=$c1['region']?></option>
+								<?}?>
+                            </select>
+
                             <select name="centre" id="centre" class="inputbox" size="1" onchange="callSEReport();">
                             <option value="" <? if($centre ==""){?> selected="selected" <? }?>>- All Centres-</option>
 								<? // Populate Dropdown with values of Centre field
@@ -141,6 +163,7 @@ function se_report(){
             <thead>
                 <tr>
                     <th class="textleft">#</th>
+                    <th nowrap="nowrap" class="textleft">Region</th>
                     <th nowrap="nowrap" class="textleft">Centre</th>
                     <?if($type==1){ ?><th nowrap="nowrap" class="textleft">Sales Executive</th><?}?>
                     <?
@@ -152,7 +175,7 @@ function se_report(){
             <?if($totalRows > 0){?>
 				<tbody>
 				<?
-					$itr = 1; $oldCentre ="";
+					$itr = 1; $oldCentre =""; $oldRegion ="";
 					$totals = array();
 					foreach($columns as $c){
 						$totals[$c] = 0;
@@ -165,8 +188,11 @@ function se_report(){
 						<tr>
 							<td class="textright"><?=$itr++?></td>
 							<td class="textleft">
+								<?=($oldRegion != $row['region'] ? '<b>'.$row['region'].'</b>' : $row['region'] )?>
+							</td>
+							<td class="textleft">
 								<a href="#" onclick="javascript:document.adminForm.type.value=1; document.adminForm.centre.value='<?=$row['centre']?>'; callSEReport(); return false;">
-								<?=($oldCentre != $row['centre'] ? $row['centre'] : '' )?>
+								<?=($oldCentre != $row['centre'] ? '<b>'.$row['centre'].'</b>' : $row['centre'] )?>
 								</a>
 							</td>
 							<?if($type==1){?>
@@ -177,11 +203,12 @@ function se_report(){
 							<?	$totals[$c] += $row[$c];
 							}?>
 						</tr>
-						<?$oldCentre = $row['centre'];
+						<?$oldCentre = $row['centre']; $oldRegion = $row['region'];
 					}?>
             	</tbody>
             	<tfoot>
 				<tr class='b'>
+					<th class="textright"></th>
 					<th class="textright"></th>
 					<th class="textright">Total</th>
 					<?if($type==1){?><th></th><?}?>
